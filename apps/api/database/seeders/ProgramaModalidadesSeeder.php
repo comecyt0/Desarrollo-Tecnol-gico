@@ -9,7 +9,7 @@ class ProgramaModalidadesSeeder extends Seeder
 {
     public function run(): void
     {
-        $programas = DB::table('tipos_programa')->get()->keyBy('clave');
+        $programas = DB::table('tipo_programas')->get()->keyBy('clave');
 
         // IPFE: 2 modalidades
         if ($programas->has('IPFE')) {

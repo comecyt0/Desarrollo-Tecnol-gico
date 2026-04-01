@@ -9,7 +9,7 @@ return new class extends Migration {
     {
         Schema::create('programa_campos', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('tipo_programa_id')->constrained('tipos_programa')->cascadeOnDelete();
+            $table->foreignId('tipo_programa_id')->constrained('tipo_programas')->cascadeOnDelete();
             $table->foreignId('etapa_id')->nullable()->constrained('programa_etapas')->cascadeOnDelete();
 
             $table->string('nombre_campo', 100);

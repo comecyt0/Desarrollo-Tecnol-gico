@@ -16,15 +16,20 @@ class SolicitudFlowTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected Rol $rolAdmin;
+    protected Rol $rolRevisor;
+    protected Rol $rolEvaluador;
+    protected Rol $rolSolicitante;
+
     protected function setUp(): void
     {
         parent::setUp();
-        
-        // Seed roles
-        Rol::create(['nombre' => 'Administrador', 'slug' => 'admin']);
-        Rol::create(['nombre' => 'Revisor', 'slug' => 'revisor']);
-        Rol::create(['nombre' => 'Evaluador', 'slug' => 'evaluador']);
-        Rol::create(['nombre' => 'Solicitante', 'slug' => 'solicitante']);
+
+        // Seed roles and store as class properties
+        $this->rolAdmin = Rol::create(['nombre' => 'Administrador', 'slug' => 'admin']);
+        $this->rolRevisor = Rol::create(['nombre' => 'Revisor', 'slug' => 'revisor']);
+        $this->rolEvaluador = Rol::create(['nombre' => 'Evaluador', 'slug' => 'evaluador']);
+        $this->rolSolicitante = Rol::create(['nombre' => 'Solicitante', 'slug' => 'solicitante']);
     }
 
     /**
@@ -53,7 +58,7 @@ class SolicitudFlowTest extends TestCase
 
         // 3. Create a Solicitante User
         $user = User::factory()->create([
-            'rol_id' => 4, // Solicitante
+            'rol_id' => $this->rolSolicitante->id,
             'institucion_id' => $institucion->id
         ]);
         
@@ -74,9 +79,10 @@ class SolicitudFlowTest extends TestCase
                              'titulo_proyecto' => 'Proyecto de Prueba de Calidad',
                              'modalidad' => 'Vinculación',
                              'area_conocimiento_id' => 1,
-                             'resumen' => 'Este es un resumen de prueba para el test de flujo.'
+                             'descripcion' => 'Este es un resumen de prueba para el test de flujo.',
+                             'monto_solicitado' => 50000
                          ]);
-        
+
         $response->assertStatus(201);
         $solicitudId = $response->json()['solicitud']['id'];
 
@@ -87,8 +93,8 @@ class SolicitudFlowTest extends TestCase
         $response->assertStatus(200);
         $this->assertEquals('enviada', $response->json()['solicitud']['estado']);
 
-        // 7. Review by Revisor (Role 2)
-        $revisor = User::factory()->create(['rol_id' => 2]);
+        // 7. Review by Revisor
+        $revisor = User::factory()->create(['rol_id' => $this->rolRevisor->id]);
         $revisorToken = JWTAuth::fromUser($revisor);
 
         $response = $this->withHeader('Authorization', 'Bearer ' . $revisorToken)

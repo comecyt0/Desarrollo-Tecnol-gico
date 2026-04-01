@@ -91,7 +91,7 @@ class TipoProgramaSeeder extends Seeder
             $tipo['activo'] = true;
             $tipo['created_at'] = now();
             $tipo['updated_at'] = now();
-            DB::table('tipos_programa')->insertOrIgnore($tipo);
+            DB::table('tipo_programas')->insertOrIgnore($tipo);
         }
     }
 }

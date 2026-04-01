@@ -10,6 +10,12 @@ use App\Http\Controllers\Evaluaciones\EvaluadorController;
 use App\Http\Controllers\Catalogos\CatalogoController;
 use App\Http\Controllers\Catalogos\ProgramaCatalogController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\TipoProgramaController;
+use App\Http\Controllers\Admin\ProgramaCampoController;
+use App\Http\Controllers\Admin\ProgramaRubroController;
+use App\Http\Controllers\Admin\ProgramaEtapaController;
+use App\Http\Controllers\Admin\ProgramaModalidadController;
+use App\Http\Controllers\Admin\ProgramaCriterioEvaluacionController;
 use App\Http\Controllers\InformeController;
 use App\Http\Controllers\ListaNegraController;
 use App\Http\Controllers\NotificacionLogController;
@@ -40,6 +46,17 @@ Route::middleware([
         // Route::post('register', [AuthController::class, 'register']);
     });
 
+    // === PUBLIC CATALOGS (No authentication required) ===
+    Route::group(['prefix' => 'catalogs/programa'], function () {
+        Route::get('{tipo_programa_id}/campos', [ProgramaCatalogController::class, 'campos']);
+        Route::get('{tipo_programa_id}/documentos', [ProgramaCatalogController::class, 'documentos']);
+        Route::get('{tipo_programa_id}/criterios', [ProgramaCatalogController::class, 'criterios']);
+        Route::get('{tipo_programa_id}/rubros', [ProgramaCatalogController::class, 'rubros']);
+        Route::get('{tipo_programa_id}/etapas', [ProgramaCatalogController::class, 'etapas']);
+        Route::get('{tipo_programa_id}/modalidades', [ProgramaCatalogController::class, 'modalidades']);
+        Route::get('{tipo_programa_id}', [ProgramaCatalogController::class, 'show']);
+    });
+
     // === PROTECTED ROUTES ===
     Route::group(['middleware' => 'auth:api'], function () {
 
@@ -56,6 +73,43 @@ Route::middleware([
             Route::get('stats', [DashboardController::class, 'adminStats']);
             Route::get('activity', [DashboardController::class, 'adminActivity']);
             Route::get('alerts', [DashboardController::class, 'adminAlerts']);
+
+            // PROGRAMAS DINÁMICOS CRUD
+            Route::get('programas', [TipoProgramaController::class, 'index']);
+            Route::post('programas', [TipoProgramaController::class, 'store']);
+            Route::put('programas/{tipoPrograma}', [TipoProgramaController::class, 'update']);
+            Route::delete('programas/{tipoPrograma}', [TipoProgramaController::class, 'destroy']);
+
+            // Campos dinámicos por programa
+            Route::get('programas/{tipoPrograma}/campos', [ProgramaCampoController::class, 'index']);
+            Route::post('programas/{tipoPrograma}/campos', [ProgramaCampoController::class, 'store']);
+            Route::put('programas/{tipoPrograma}/campos/{campo}', [ProgramaCampoController::class, 'update']);
+            Route::delete('programas/{tipoPrograma}/campos/{campo}', [ProgramaCampoController::class, 'destroy']);
+
+            // Rubros por programa
+            Route::get('programas/{tipoPrograma}/rubros', [ProgramaRubroController::class, 'index']);
+            Route::post('programas/{tipoPrograma}/rubros', [ProgramaRubroController::class, 'store']);
+            Route::put('programas/{tipoPrograma}/rubros/{rubro}', [ProgramaRubroController::class, 'update']);
+            Route::delete('programas/{tipoPrograma}/rubros/{rubro}', [ProgramaRubroController::class, 'destroy']);
+
+            // Etapas por programa
+            Route::get('programas/{tipoPrograma}/etapas', [ProgramaEtapaController::class, 'index']);
+            Route::post('programas/{tipoPrograma}/etapas', [ProgramaEtapaController::class, 'store']);
+            Route::put('programas/{tipoPrograma}/etapas/{etapa}', [ProgramaEtapaController::class, 'update']);
+            Route::delete('programas/{tipoPrograma}/etapas/{etapa}', [ProgramaEtapaController::class, 'destroy']);
+
+            // Modalidades por programa
+            Route::get('programas/{tipoPrograma}/modalidades', [ProgramaModalidadController::class, 'index']);
+            Route::post('programas/{tipoPrograma}/modalidades', [ProgramaModalidadController::class, 'store']);
+            Route::put('programas/{tipoPrograma}/modalidades/{modalidad}', [ProgramaModalidadController::class, 'update']);
+            Route::delete('programas/{tipoPrograma}/modalidades/{modalidad}', [ProgramaModalidadController::class, 'destroy']);
+
+            // Criterios de evaluación por programa
+            Route::get('programas/{tipoPrograma}/criterios', [ProgramaCriterioEvaluacionController::class, 'index']);
+            Route::post('programas/{tipoPrograma}/criterios', [ProgramaCriterioEvaluacionController::class, 'store']);
+            Route::put('programas/{tipoPrograma}/criterios/{criterio}', [ProgramaCriterioEvaluacionController::class, 'update']);
+            Route::delete('programas/{tipoPrograma}/criterios/{criterio}', [ProgramaCriterioEvaluacionController::class, 'destroy']);
+
             Route::apiResource('convocatorias', ConvocatoriaController::class);
             Route::apiResource('users', UserController::class);
             Route::apiResource('ministraciones', MinistracionController::class);
@@ -91,19 +145,8 @@ Route::middleware([
         // CATALOGOS GENERALES (Todos los autenticados)
         Route::get('catalogos', [CatalogoController::class, 'index']);
 
-        // CATALOGS - DYNAMIC PROGRAM CONFIGURATION
-        Route::group(['prefix' => 'catalogs/programa'], function () {
-            // Individual endpoints (fetch specific catalog type)
-            Route::get('{tipo_programa_id}/campos', [ProgramaCatalogController::class, 'campos']);
-            Route::get('{tipo_programa_id}/documentos', [ProgramaCatalogController::class, 'documentos']);
-            Route::get('{tipo_programa_id}/criterios', [ProgramaCatalogController::class, 'criterios']);
-            Route::get('{tipo_programa_id}/rubros', [ProgramaCatalogController::class, 'rubros']);
-            Route::get('{tipo_programa_id}/etapas', [ProgramaCatalogController::class, 'etapas']);
-            Route::get('{tipo_programa_id}/modalidades', [ProgramaCatalogController::class, 'modalidades']);
-
-            // Complete configuration (one call for all)
-            Route::get('{tipo_programa_id}', [ProgramaCatalogController::class, 'show']);
-        });
+        // CATALOGS - Cache management (requires authentication/admin)
+        Route::delete('catalogs/programa/{tipo_programa_id}/cache', [ProgramaCatalogController::class, 'clearCache']);
 
         // SOLICITANTE INSTITUCIONAL (4)
         Route::group(['prefix' => 'solicitudes'], function () {

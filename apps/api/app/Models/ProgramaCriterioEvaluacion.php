@@ -2,11 +2,16 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ProgramaCriterioEvaluacion extends Model
 {
+    use HasFactory;
+
+    protected $table = 'programa_criterios_evaluacion';
+
     protected $fillable = [
         'tipo_programa_id',
         'etapa_id',

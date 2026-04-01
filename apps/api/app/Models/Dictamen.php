@@ -49,20 +49,17 @@ class Dictamen extends Model
         parent::boot();
 
         static::saving(function ($dictamen) {
-            // Si hay criterios dinámicos, calcular desde ellos
-            if ($dictamen->criterioDinamicos()->exists()) {
-                $puntajeDinamico = $dictamen->criterioDinamicos()
-                    ->sum('puntaje_obtenido');
-                $dictamen->puntaje_total = $puntajeDinamico;
-            } else {
-                // Legacy: suma de los 4 criterios fijos
-                $dictamen->puntaje_total = $dictamen->criterio_1_puntaje +
-                                           $dictamen->criterio_2_puntaje +
-                                           $dictamen->criterio_3_puntaje +
-                                           $dictamen->criterio_4_puntaje;
+            // Si puntaje_total ya viene seteado (path dinámico: el controller lo calculó),
+            // no recalcular. Solo aplica en path legacy (4 criterios hardcodeados).
+            if (!isset($dictamen->puntaje_total) || $dictamen->puntaje_total === null) {
+                $dictamen->puntaje_total = ($dictamen->criterio_1_puntaje ?? 0) +
+                                           ($dictamen->criterio_2_puntaje ?? 0) +
+                                           ($dictamen->criterio_3_puntaje ?? 0) +
+                                           ($dictamen->criterio_4_puntaje ?? 0);
             }
 
-            $dictamen->sujeto_apoyo = $dictamen->puntaje_total >= 80;
+            $umbral = $dictamen->puntaje_minimo_aprobatorio ?? 80;
+            $dictamen->sujeto_apoyo = $dictamen->puntaje_total >= $umbral;
         });
     }
 }

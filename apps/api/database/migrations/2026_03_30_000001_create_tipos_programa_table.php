@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
-        Schema::create('tipos_programa', function (Blueprint $table) {
+        Schema::create('tipo_programas', function (Blueprint $table) {
             $table->id();
             $table->string('clave', 20)->unique(); // PFPI, PROT, IPFE, VINC, EMP
             $table->string('nombre', 255);
@@ -40,6 +40,6 @@ return new class extends Migration {
 
     public function down(): void
     {
-        Schema::dropIfExists('tipos_programa');
+        Schema::dropIfExists('tipo_programas');
     }
 };

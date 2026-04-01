@@ -41,8 +41,7 @@ class RevisionController extends Controller
         DB::beginTransaction();
         try {
             $solicitud->update([
-                'estado' => 'en_evaluacion',
-                'etapa_actual' => 'evaluacion_tecnica'
+                'estado' => 'en_evaluacion'
             ]);
 
             // Notificar al solicitante

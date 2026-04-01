@@ -9,7 +9,7 @@ class ProgramaEtapasSeeder extends Seeder
 {
     public function run(): void
     {
-        $programas = DB::table('tipos_programa')->get()->keyBy('clave');
+        $programas = DB::table('tipo_programas')->get()->keyBy('clave');
 
         // Prototipos: 2 etapas
         if ($programas->has('PROT')) {

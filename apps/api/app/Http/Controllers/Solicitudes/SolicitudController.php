@@ -6,6 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\ListaNegra;
 use App\Models\Convocatoria;
 use App\Models\Solicitud;
+use App\Models\SolicitudCampoDinamico;
+use App\Models\SolicitudRubroPresupuesto;
+use App\Models\SolicitudMiembroEquipo;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -94,9 +97,46 @@ class SolicitudController extends Controller
                 'descripcion_proyecto' => $request->descripcion,
                 'monto_solicitado' => $request->monto_solicitado,
                 'area_conocimiento_id' => $request->area_conocimiento_id,
-                'estado' => 'borrador', 
-                'etapa_actual' => 'recepcion',
+                'estado' => 'borrador',
             ]);
+
+            // Guardar campos dinámicos
+            if ($request->has('campos_dinamicos')) {
+                foreach ($request->campos_dinamicos as $campo) {
+                    SolicitudCampoDinamico::create([
+                        'solicitud_id'     => $solicitud->id,
+                        'programa_campo_id' => $campo['campo_id'],
+                        'valor_texto'      => $campo['valor'],
+                    ]);
+                }
+            }
+
+            // Guardar rubros presupuestales
+            if ($request->has('rubros')) {
+                foreach ($request->rubros as $rubro) {
+                    if (($rubro['monto'] ?? 0) > 0) {
+                        SolicitudRubroPresupuesto::create([
+                            'solicitud_id'     => $solicitud->id,
+                            'rubro_id'         => $rubro['rubro_id'],
+                            'monto_solicitado' => $rubro['monto'],
+                        ]);
+                    }
+                }
+            }
+
+            // Guardar miembros de equipo (EMP)
+            if ($request->has('miembros_equipo')) {
+                foreach ($request->miembros_equipo as $i => $miembro) {
+                    SolicitudMiembroEquipo::create([
+                        'solicitud_id'    => $solicitud->id,
+                        'nombre_completo' => $miembro['nombre'],
+                        'edad'            => $miembro['edad'] ?? null,
+                        'rol_en_equipo'   => $miembro['rol'],
+                        'correo'          => $miembro['email'] ?? null,
+                        'es_lider'        => $i === 0,
+                    ]);
+                }
+            }
 
             DB::commit();
 
@@ -157,7 +197,6 @@ class SolicitudController extends Controller
 
         $solicitud->update([
             'estado' => 'enviada',
-            'etapa_actual' => 'revision',
         ]);
 
         // Notificar al solicitante
@@ -196,7 +235,9 @@ class SolicitudController extends Controller
      */
     public function activeConvocatorias()
     {
-        $convocatorias = Convocatoria::where('estado', 'activa')->get();
+        $convocatorias = Convocatoria::with('tipoPrograma')
+            ->where('estado', 'activa')
+            ->get();
         return response()->json($convocatorias);
     }
 }

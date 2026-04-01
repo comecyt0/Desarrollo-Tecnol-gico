@@ -9,7 +9,7 @@ return new class extends Migration {
     {
         Schema::create('programa_etapas', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('tipo_programa_id')->constrained('tipos_programa')->cascadeOnDelete();
+            $table->foreignId('tipo_programa_id')->constrained('tipo_programas')->cascadeOnDelete();
             $table->integer('numero_etapa');
             $table->string('nombre', 255);
             $table->text('descripcion')->nullable();

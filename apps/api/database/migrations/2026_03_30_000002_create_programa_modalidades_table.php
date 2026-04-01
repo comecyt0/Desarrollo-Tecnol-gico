@@ -9,7 +9,7 @@ return new class extends Migration {
     {
         Schema::create('programa_modalidades', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('tipo_programa_id')->constrained('tipos_programa')->cascadeOnDelete();
+            $table->foreignId('tipo_programa_id')->constrained('tipo_programas')->cascadeOnDelete();
             $table->string('clave', 50);
             $table->string('nombre', 255);
             $table->text('descripcion')->nullable();
