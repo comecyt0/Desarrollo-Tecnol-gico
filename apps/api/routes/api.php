@@ -44,7 +44,9 @@ Route::middleware([
 
     // === AUTH ===
     Route::group(['prefix' => 'auth'], function () {
-        Route::post('login', [AuthController::class, 'login']);
+        // ✅ SEGURIDAD: Strict rate limiting para /auth/login (5 intentos/minuto máximo)
+        Route::post('login', [AuthController::class, 'login'])
+            ->middleware('auth.login.ratelimit');
         // Route::post('register', [AuthController::class, 'register']);
     });
 

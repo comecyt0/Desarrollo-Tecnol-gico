@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Solicitudes;
 
 use App\Http\Controllers\Controller;
+use App\Http\Traits\ValidatesBinaryMimeTypes;
 use App\Models\ListaNegra;
 use App\Models\Convocatoria;
 use App\Models\Solicitud;
@@ -19,6 +20,8 @@ use Illuminate\Validation\ValidationException;
 
 class SolicitudController extends Controller
 {
+    use ValidatesBinaryMimeTypes;
+
     /**
      * List user's solicitudes
      */
@@ -276,6 +279,17 @@ class SolicitudController extends Controller
         ]);
 
         $file = $request->file('archivo_informe');
+
+        // ✅ SEGURIDAD: Validar MIME type binario (no solo extensión)
+        try {
+            $this->validateBinaryMimeType($file->getRealPath());
+        } catch (ValidationException $e) {
+            return response()->json([
+                'error' => 'Archivo inválido',
+                'message' => 'El archivo debe ser un PDF válido. Se detectó un tipo diferente.',
+            ], 422);
+        }
+
         $filename = "{$solicitud->folio}_informe_final_" . time() . ".pdf";
 
         // Store in public disk: storage/app/public/documentos/{solicitud_id}

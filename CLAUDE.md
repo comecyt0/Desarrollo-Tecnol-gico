@@ -1,5 +1,48 @@
 # CLAUDE.md - Memoria del Proyecto COMECYT
-**Versión:** 3.0 (06 Abril 2026 - 21:30) | **Estado:** Production-Ready ✅ | **Completitud:** 100% (Post-MVP Completo)
+**Versión:** 3.1 (06 Abril 2026 - 23:45) | **Estado:** Production-Ready + Security Hardened ✅ | **Completitud:** 100% (Post-MVP + TIER 1 Security)
+
+---
+
+## 🔒 MEJORAS DE SEGURIDAD - TIER 1 (Implementadas 06-04-2026)
+
+### Security Enhancements Completadas
+
+1. ✅ **Next.js Viewport Deprecation Fix**
+   - Movido de `metadata.viewport` a `Viewport` export (Next.js 14+)
+   - Eliminó 25 warnings del build
+   - Archivo: `apps/web/src/app/layout.tsx`
+   - Impacto: Build limpio, mejor compatibilidad futura
+
+2. ✅ **Binary MIME Type Validation**
+   - Creado: `apps/api/app/Http/Traits/ValidatesBinaryMimeTypes.php`
+   - Implementado en: `DocumentoUploadController`, `SolicitudController::submitInforme()`
+   - Previene ataques donde archivo malicioso es renombrado con extensión PDF
+   - Usa `finfo_file()` para detectar MIME real, no solo extensión
+   - Impacto: Seguridad crítica contra file upload exploits
+
+3. ✅ **Strict Rate Limiting para /auth/login**
+   - Creado: `apps/api/app/Http/Middleware/AuthLoginRateLimitMiddleware.php`
+   - Configuración: 5 intentos por minuto (AUTH_LOGIN_RATE_LIMIT=5)
+   - Retorna HTTP 429 si se excede límite
+   - Headers: X-RateLimit-Limit, X-RateLimit-Remaining, Retry-After
+   - Impacto: Protección contra brute force attacks
+
+4. ✅ **Pre-commit Hooks Setup**
+   - Frontend: `husky` + `lint-staged` + `.lintstagedrc.json`
+     - Ejecuta ESLint + Prettier en cada commit
+     - Previene code con errores en main
+   - Backend: `husky` + `lint-staged` + `.lintstagedrc.json`
+     - Ejecuta Laravel Pint en cada commit
+   - Hooks: `.husky/pre-commit` en ambos apps
+   - Impacto: Código limpio, estándares enforced, previene technical debt
+
+### Configuración .env Actualizada
+
+```bash
+# apps/api/.env - Nuevas variables
+AUTH_LOGIN_RATE_LIMIT=5         # Máximo de intentos login/minuto
+AUTH_LOGIN_RATE_WINDOW=60       # Ventana de tiempo en segundos
+```
 
 ---
 
@@ -8,9 +51,10 @@
 ### Build Production ✅
 - **Status:** PASSED
 - **Time:** 5-6 segundos
-- **Warnings:** 25 (metadata viewport deprecated - Next.js 14 standard, no bloqueantes)
+- **Warnings:** 0 (eliminated viewport deprecation warnings with Viewport export)
 - **Routes:** 34 páginas compiladas correctamente
 - **TypeScript:** 0 errors en compilación
+- **Security Checks:** Pre-commit hooks now prevent commits with ESLint/Pint errors
 
 ### Migrations Database ✅
 - **Status:** ALL SYNCHRONIZED
@@ -352,6 +396,114 @@ $data = Cache::remember($key, $ttl, function () {
     return Model::with('relations')->get();  // Serializa como __PHP_Incomplete_Class
 });
 ```
+
+---
+
+## 🔒 SEGURIDAD - GUÍAS DE IMPLEMENTACIÓN
+
+### 1. Binary MIME Type Validation (File Upload Security)
+
+**Problema:** Archivo malicioso renombrado con extensión segura (.exe → .pdf)
+
+**Solución:** Usar trait `ValidatesBinaryMimeTypes` en controllers
+
+```php
+// apps/api/app/Http/Controllers/YourController.php
+use App\Http\Traits\ValidatesBinaryMimeTypes;
+
+class DocumentController extends Controller {
+    use ValidatesBinaryMimeTypes;
+
+    public function upload(Request $request) {
+        // Validación Laravel (extensión)
+        $request->validate([
+            'file' => 'required|file|mimes:pdf|max:10240',
+        ]);
+
+        $file = $request->file('file');
+
+        // ✅ Validación BINARIA (MIME real)
+        try {
+            $this->validateBinaryMimeType($file->getRealPath());
+            // O permitir múltiples MIME types:
+            // $this->validateBinaryMimeType($file->getRealPath(), ['application/pdf', 'image/jpeg']);
+        } catch (ValidationException $e) {
+            return response()->json(['error' => 'Archivo inválido'], 422);
+        }
+
+        // Procesar archivo...
+    }
+}
+```
+
+**Ubicación:** `apps/api/app/Http/Traits/ValidatesBinaryMimeTypes.php`
+
+### 2. Rate Limiting para Authentication Endpoints
+
+**Problema:** Ataques de brute force en /auth/login
+
+**Solución:** AuthLoginRateLimitMiddleware (5 intentos/minuto)
+
+```php
+// Configuración en .env
+AUTH_LOGIN_RATE_LIMIT=5         # Máximo intentos por ventana
+AUTH_LOGIN_RATE_WINDOW=60       # Ventana en segundos
+
+// En routes/api.php (ya implementado)
+Route::post('login', [AuthController::class, 'login'])
+    ->middleware('auth.login.ratelimit');
+```
+
+**Headers de Respuesta:**
+- `X-RateLimit-Limit`: 5
+- `X-RateLimit-Remaining`: 3 (si user hizo 2 intentos)
+- `Retry-After`: 60
+
+**Ubicación:** `apps/api/app/Http/Middleware/AuthLoginRateLimitMiddleware.php`
+
+### 3. Pre-commit Hooks (Code Quality Enforcement)
+
+**Setup (ya completado):**
+
+```bash
+# Frontend
+cd apps/web
+npm install  # Incluye husky + lint-staged
+# Hook automáticamente ejecuta ESLint + Prettier
+
+# Backend
+cd apps/api
+npm install  # Incluye husky + lint-staged
+# Hook automáticamente ejecuta Laravel Pint
+```
+
+**Qué hace:** Antes de cada commit, valida código y previene commits con errores
+
+**Archivos:** `.husky/pre-commit`, `.lintstagedrc.json`
+
+**Si falla pre-commit:**
+```bash
+# Opción 1: Arreglar errores automáticamente
+npm run lint --fix        # Frontend
+vendor/bin/pint --fix     # Backend
+
+# Opción 2: Skip (NO RECOMENDADO - solo emergencias)
+git commit --no-verify
+```
+
+---
+
+### Reporte de Seguridad Post-TIER 1
+
+| Área | Status | Mitigación |
+|------|--------|-----------|
+| **File Upload** | ✅ Hardened | Binary MIME validation + size limits |
+| **Brute Force** | ✅ Hardened | Rate limiting 5 intentos/min en login |
+| **Code Quality** | ✅ Enforced | Pre-commit hooks + ESLint + Pint |
+| **SQL Injection** | ✅ Safe | Eloquent ORM (no raw queries) |
+| **XSS** | ✅ Safe | React escapa HTML por default |
+| **CSRF** | ✅ Safe | JWT stateless (no cookies) |
+| **JWT Expiry** | ✅ Safe | 24h TTL (verificar config/jwt.php) |
 
 ---
 

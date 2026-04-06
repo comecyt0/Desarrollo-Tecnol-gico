@@ -17,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'revisor' => \App\Http\Middleware\RevisorMiddleware::class,
             'evaluador' => \App\Http\Middleware\EvaluadorMiddleware::class,
             'api.auth' => \App\Http\Middleware\ApiAuthenticate::class,
+            'auth.login.ratelimit' => \App\Http\Middleware\AuthLoginRateLimitMiddleware::class,
         ]);
 
         // Prevent API routes from redirecting to login

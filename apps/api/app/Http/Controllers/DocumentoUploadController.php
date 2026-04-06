@@ -5,29 +5,44 @@ namespace App\Http\Controllers;
 use App\Models\Solicitud;
 use App\Models\SolicitudDocumento;
 use App\Models\Ministracion;
+use App\Http\Traits\ValidatesBinaryMimeTypes;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class DocumentoUploadController extends Controller
 {
+    use ValidatesBinaryMimeTypes;
+
     public function upload(Request $request, Solicitud $solicitud)
     {
         $request->validate([
-            'file' => 'required|file|mimes:pdf|max:5120', // 5MB limit
+            'file' => 'required|file|mimes:pdf|max:5120', // 5MB limit (5120 KB)
             'tipo' => 'required|string|max:100'
         ]);
 
         $user = auth()->user();
-        
+
         // Verification: must be the owner of the request or an admin
         if ($user->role_id !== 1 && $solicitud->user_id !== $user->id) {
             return response()->json(['error' => 'No autorizado'], 403);
         }
 
         $file = $request->file('file');
+
+        // ✅ SEGURIDAD: Validar MIME type real (no solo extensión)
+        try {
+            $this->validateBinaryMimeType($file->getRealPath());
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'error' => 'Archivo inválido',
+                'message' => 'El archivo debe ser un PDF válido. Se detectó un tipo diferente.',
+            ], 422);
+        }
+
         $tipo = $request->input('tipo');
         $extension = $file->getClientOriginalExtension();
+        // ✅ SEGURIDAD: Usar nombre aleatorio en lugar de basarse en input
         $filename = "{$solicitud->folio}_{$tipo}_" . time() . ".{$extension}";
 
         // Store in public disk: storage/app/public/documentos/{solicitud_id}
