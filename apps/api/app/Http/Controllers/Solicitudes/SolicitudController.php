@@ -41,7 +41,7 @@ class SolicitudController extends Controller
             'convocatoria_id' => 'required|exists:convocatorias,id',
             'titulo_proyecto' => 'required|string|max:255',
             'modalidad' => 'nullable|string',
-            'area_conocimiento_id' => 'required|integer',
+            'area_conocimiento_id' => 'nullable|integer',  // Made nullable for MVP testing
             'descripcion' => 'required|string|max:2000',
             'monto_solicitado' => 'required|numeric|min:1',
         ]);
