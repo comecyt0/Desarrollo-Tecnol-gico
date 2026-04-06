@@ -56,13 +56,24 @@ class DatabaseSeeder extends Seeder
 
         $this->command->info('Seeders básicos ejecutados: Roles, Institucion COMECYT y Usuario admin (admin@comecyt.gob.mx / password123)');
 
-        // 4. Programa dinámicos (5 programas COMECYT)
+        // 3.5 Usuarios de prueba (revisor, evaluador, solicitante)
+        $this->call(UsuariosPruebaSeeder::class);
+
+        // 4. Áreas de conocimiento
+        $this->call(AreasConocimientoSeeder::class);
+
+        // 5. Programa dinámicos (5 programas COMECYT)
         $this->call(TipoProgramaSeeder::class);
         $this->call(ProgramaEtapasSeeder::class);
         $this->call(ProgramaModalidadesSeeder::class);
         $this->call(ProgramaCriteriosSeeder::class);
         $this->call(ProgramaRubrosSeeder::class);
 
+        // 6. Documentos y convocatorias reales
+        $this->call(ProgramaDocumentosSeeder::class);
+        $this->call(ConvocatoriasRealesSeeder::class);
+
         $this->command->info('Programas dinámicos: PFPI, Prototipos, IPFE, Vinculación, Emprendedores - COMPLETADOS');
+        $this->command->info('Documentos por programa y convocatorias reales 2026 - COMPLETADOS');
     }
 }

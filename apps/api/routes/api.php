@@ -12,6 +12,7 @@ use App\Http\Controllers\Catalogos\ProgramaCatalogController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\TipoProgramaController;
 use App\Http\Controllers\Admin\ProgramaCampoController;
+use App\Http\Controllers\Admin\ProgramaDocumentoController;
 use App\Http\Controllers\Admin\ProgramaRubroController;
 use App\Http\Controllers\Admin\ProgramaEtapaController;
 use App\Http\Controllers\Admin\ProgramaModalidadController;
@@ -58,7 +59,7 @@ Route::middleware([
     });
 
     // === PROTECTED ROUTES ===
-    Route::group(['middleware' => 'auth:api'], function () {
+    Route::group(['middleware' => 'api.auth'], function () {
 
         Route::group(['prefix' => 'auth'], function () {
             Route::post('logout', [AuthController::class, 'logout']);
@@ -67,9 +68,9 @@ Route::middleware([
         });
 
         // Agrupación por Roles (Ejemplo inicial, los controllers completos se implementan en fase 2)
-        
+
         // ADMIN COMECYT (1)
-        Route::group(['prefix' => 'admin'], function () {
+        Route::group(['prefix' => 'admin', 'middleware' => 'admin'], function () {
             Route::get('stats', [DashboardController::class, 'adminStats']);
             Route::get('activity', [DashboardController::class, 'adminActivity']);
             Route::get('alerts', [DashboardController::class, 'adminAlerts']);
@@ -85,6 +86,12 @@ Route::middleware([
             Route::post('programas/{tipoPrograma}/campos', [ProgramaCampoController::class, 'store']);
             Route::put('programas/{tipoPrograma}/campos/{campo}', [ProgramaCampoController::class, 'update']);
             Route::delete('programas/{tipoPrograma}/campos/{campo}', [ProgramaCampoController::class, 'destroy']);
+
+            // Documentos por programa
+            Route::get('programas/{tipoPrograma}/documentos', [ProgramaDocumentoController::class, 'index']);
+            Route::post('programas/{tipoPrograma}/documentos', [ProgramaDocumentoController::class, 'store']);
+            Route::put('programas/{tipoPrograma}/documentos/{documento}', [ProgramaDocumentoController::class, 'update']);
+            Route::delete('programas/{tipoPrograma}/documentos/{documento}', [ProgramaDocumentoController::class, 'destroy']);
 
             // Rubros por programa
             Route::get('programas/{tipoPrograma}/rubros', [ProgramaRubroController::class, 'index']);
@@ -125,7 +132,7 @@ Route::middleware([
         });
 
         // REVISOR (2)
-        Route::group(['prefix' => 'revisor'], function () {
+        Route::group(['prefix' => 'revisor', 'middleware' => 'revisor'], function () {
             Route::get('stats', [DashboardController::class, 'revisorStats']);
             Route::get('solicitudes/pendientes', [RevisionController::class, 'pendientes']);
             Route::get('solicitudes/{solicitud}', [RevisionController::class, 'show']);
@@ -135,7 +142,7 @@ Route::middleware([
         });
 
         // EVALUADOR (3)
-        Route::group(['prefix' => 'evaluador'], function () {
+        Route::group(['prefix' => 'evaluador', 'middleware' => 'evaluador'], function () {
             Route::get('stats', [DashboardController::class, 'evaluadorStats']);
             Route::get('asignaciones', [EvaluadorController::class, 'asignaciones']);
             Route::get('asignaciones/{asignacion}', [EvaluadorController::class, 'show']);
@@ -155,8 +162,10 @@ Route::middleware([
             Route::get('convocatorias-activas', [SolicitudController::class, 'activeConvocatorias']);
             Route::get('{solicitud}', [SolicitudController::class, 'show']);
             Route::post('{solicitud}/enviar', [SolicitudController::class, 'enviar']);
+            Route::post('{solicitud}/reenviar', [SolicitudController::class, 'reenviar']);
             Route::post('{solicitud}/informe', [SolicitudController::class, 'submitInforme']);
             Route::post('{solicitud}/documentos', [\App\Http\Controllers\DocumentoUploadController::class, 'upload']);
+            Route::delete('{solicitud}/documentos/{documento}', [\App\Http\Controllers\DocumentoUploadController::class, 'destroy']);
         });
 
         // === DOCUMENTOS Y REPORTES ===
