@@ -12,8 +12,9 @@ class ProgramaCampoController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('auth:api');
-        $this->middleware('admin');
+
+        // Laravel 11: middleware applied via routes
+
     }
 
     /**

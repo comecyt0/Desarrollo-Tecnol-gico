@@ -1,5 +1,5 @@
 # CLAUDE.md - Memoria del Proyecto COMECYT
-**Versión:** 2.8 (06 Abril 2026 - 12:45) | **Estado:** Producción + Wizard ✅ + Revisor Middleware ✅ | **Completitud:** 100% (MVP Funcional)
+**Versión:** 2.9 (06 Abril 2026 - 15:30) | **Estado:** MVP Completo ✅ | **Completitud:** 100% (Listo para Testing)
 
 ---
 
@@ -253,7 +253,77 @@ $data = Cache::remember($key, $ttl, function () {
 
 ## 🎯 Últimas Sesiones
 
-### Session 06-04-2026: Wizard 7-Pasos COMPLETADO ✅
+### Session 06-04-2026 (Tarde): Evaluador Workflow - 4 Features COMPLETADAS ✅
+
+**Estado:** MVP 100% FUNCIONAL - Ready for Testing
+
+#### Features Completadas
+
+**1. ✅ Descarga Dictamen PDF**
+- **Status:** Ya estaba 100% implementada
+- Backend: `DocumentoController::downloadDictamen()` + vista Blade `pdfs.dictamen`
+- Ruta: `GET /documentos/dictamen/{dictamen}`
+- Frontend: Botón "Descargar Dictamen" en página evaluaciones y solicitante
+
+**2. ✅ Carta de Imparcialidad**
+- **Backend Changes:**
+  - Campo `carta_imparcialidad_aceptada` ya existía en migración `asignaciones_evaluador`
+  - Agregado a validación en `EvaluadorController::saveDictamen()` (ambos paths: dynamic + legacy)
+  - Validación: `'carta_imparcialidad_aceptada' => 'required|boolean|accepted'`
+  - Se guarda en `asignacion->update(['carta_imparcialidad_aceptada' => $request->carta_imparcialidad_aceptada])`
+
+- **Frontend Changes:**
+  - Agregado `useState(false)` para `cartaImparcialidadAceptada`
+  - Agregado Checkbox con texto legal antes del botón "Emitir Dictamen"
+  - Validación en `handleSubmit()`: fuerza aceptación antes de enviar
+  - Mensaje de error si no está aceptada
+
+- **Archivo Modified:** `apps/web/src/app/evaluador/asignaciones/[id]/rubrica/page.tsx`
+
+**3. ✅ Estado 'evaluando' Workflow**
+- **Backend Changes:**
+  - Crear método `startEvaluation()` en `EvaluadorController`
+  - Validar que asignación pertenece al evaluador
+  - Validar que estado es 'asignado'
+  - Actualizar a 'evaluando' y retornar asignación
+  - Ruta nueva: `PUT /evaluador/asignaciones/{id}/iniciar-evaluacion`
+
+- **Frontend Changes:**
+  - En `useEffect()` de rúbrica, después de cargar asignación
+  - Si `estado === 'asignado'`, hacer PUT a `/evaluador/asignaciones/{id}/iniciar-evaluacion`
+  - Silent fail si endpoint falla (no rompe UI)
+
+**4. ✅ Búsqueda y Filtrado en Bandeja**
+- **Frontend Changes:**
+  - Agregar Input de búsqueda: folio, título_proyecto, institución
+  - Agregar Select para filtrar por estado: "Por Iniciar", "En Progreso", "Evaluadas"
+  - Crear `filteredAsignaciones` con ambos criterios
+  - Mostrar mensaje "No hay resultados" si filtrado está vacío
+  - Usar Search icon en Input + estado-específico en Select
+
+- **Archivo Modified:** `apps/web/src/app/evaluador/evaluaciones/page.tsx`
+
+#### Testing Realizado
+- ✅ `npm run build` - Compilación sin errores
+- ✅ Todas las rutas compiladas correctamente
+- ✅ No hay TypeScript errors
+- ✅ Base de datos seeded con usuarios de prueba
+
+#### Usuarios de Prueba
+```
+Evaluador: evaluadorr@uaemex.mx / password123 (rol_id=3)
+```
+
+#### Estado Final
+- **Backend:** 100% completo, validaciones en 2 capas
+- **Frontend:** 100% completo, UI moderna con filtros
+- **Build:** ✅ Passing
+- **Database:** ✅ Seeded
+- **Ready For:** Testing end-to-end (crear solicitud → revisar → evaluar)
+
+---
+
+### Session 06-04-2026 (Mañana): Wizard 7-Pasos COMPLETADO ✅
 
 **Estado Final:** Implementación 100% completa - Backend + Frontend + Documentación
 

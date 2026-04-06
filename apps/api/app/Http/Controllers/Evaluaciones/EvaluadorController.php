@@ -83,8 +83,21 @@ class EvaluadorController extends Controller
                 'criterios_puntajes' => 'required|array|min:1',
                 'criterios_puntajes.*.criterio_id' => 'required|integer|exists:programa_criterios_evaluacion,id',
                 'criterios_puntajes.*.puntaje_obtenido' => 'required|numeric|min:0',
-                'comentarios_justificacion' => 'required|string|max:2000'
+                'comentarios_justificacion' => 'required|string|max:2000',
+                'carta_imparcialidad_aceptada' => 'required|boolean|accepted'
             ]);
+
+            // Validar que no todos los puntajes sean 0
+            $totalPuntaje = 0;
+            foreach ($request->criterios_puntajes as $cp) {
+                $totalPuntaje += $cp['puntaje_obtenido'];
+            }
+            if ($totalPuntaje === 0 || $totalPuntaje < 0) {
+                return response()->json([
+                    'error' => 'Debes calificar al menos un criterio. No puedes enviar un dictamen con todos los puntajes en 0.',
+                    'validation_error' => 'total_puntaje_zero'
+                ], 422);
+            }
         } else {
             // Path legacy: 4 campos hardcodeados
             $request->validate([
@@ -92,8 +105,23 @@ class EvaluadorController extends Controller
                 'criterio_2_puntaje' => 'required|numeric|min:0|max:25',
                 'criterio_3_puntaje' => 'required|numeric|min:0|max:25',
                 'criterio_4_puntaje' => 'required|numeric|min:0|max:25',
-                'comentarios_justificacion' => 'required|string|max:2000'
+                'comentarios_justificacion' => 'required|string|max:2000',
+                'carta_imparcialidad_aceptada' => 'required|boolean|accepted'
             ]);
+
+            // Validar que no todos los puntajes sean 0
+            $totalPuntaje = (
+                $request->criterio_1_puntaje +
+                $request->criterio_2_puntaje +
+                $request->criterio_3_puntaje +
+                $request->criterio_4_puntaje
+            );
+            if ($totalPuntaje === 0 || $totalPuntaje < 0) {
+                return response()->json([
+                    'error' => 'Debes calificar al menos un criterio. No puedes enviar un dictamen con todos los puntajes en 0.',
+                    'validation_error' => 'total_puntaje_zero'
+                ], 422);
+            }
         }
 
         DB::beginTransaction();
@@ -133,7 +161,10 @@ class EvaluadorController extends Controller
             }
 
             // Update assignment status
-            $asignacion->update(['estado' => 'concluido']);
+            $asignacion->update([
+                'estado' => 'concluido',
+                'carta_imparcialidad_aceptada' => $request->carta_imparcialidad_aceptada ?? false
+            ]);
 
             // Actualizar estado de la solicitud
             if ($dictamen->sujeto_apoyo) {
@@ -167,5 +198,28 @@ class EvaluadorController extends Controller
             DB::rollBack();
             return response()->json(['error' => 'Error al guardar dictamen: ' . $e->getMessage()], 500);
         }
+    }
+
+    /**
+     * Cambiar estado de asignación a 'evaluando' cuando evaluador abre la rúbrica
+     */
+    public function startEvaluation(AsignacionEvaluador $asignacion)
+    {
+        // Validar que pertenece al evaluador autenticado
+        if ($asignacion->evaluador_id !== auth('api')->user()->id) {
+            return response()->json(['error' => 'No autorizado'], 403);
+        }
+
+        // Solo cambiar si el estado es 'asignado'
+        if ($asignacion->estado !== 'asignado') {
+            return response()->json(['error' => 'La asignación no está en estado asignado'], 422);
+        }
+
+        $asignacion->update(['estado' => 'evaluando']);
+
+        return response()->json([
+            'message' => 'Evaluación iniciada',
+            'asignacion' => $asignacion
+        ]);
     }
 }

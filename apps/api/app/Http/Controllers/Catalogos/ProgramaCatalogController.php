@@ -26,7 +26,7 @@ class ProgramaCatalogController extends Controller
                 'criterios' => fn($q) => $q->where('activo', true)->orderBy('orden'),
             ])->find($tipoProgramaId);
 
-            return $programa;
+            return $programa ? $programa->toArray() : null;
         });
 
         if (!$data) {
@@ -44,14 +44,14 @@ class ProgramaCatalogController extends Controller
             $programa = TipoPrograma::find($tipoProgramaId);
             if (!$programa) return null;
 
-            return $programa->campos()->where('activo', true)->orderBy('orden')->get();
+            return $programa->campos()->where('activo', true)->orderBy('orden')->get()->toArray();
         });
 
         if ($data === null) {
             return response()->json(['message' => 'Programa no encontrado'], 404);
         }
 
-        return response()->json(['message' => 'OK', 'data' => $data, 'count' => count($data)]);
+        return response()->json(['message' => 'OK', 'data' => $data, 'count' => is_array($data) ? count($data) : 0]);
     }
 
     public function documentos(int $tipoProgramaId): JsonResponse
@@ -62,14 +62,14 @@ class ProgramaCatalogController extends Controller
             $programa = TipoPrograma::find($tipoProgramaId);
             if (!$programa) return null;
 
-            return $programa->documentos()->where('activo', true)->orderBy('orden')->get();
+            return $programa->documentos()->where('activo', true)->orderBy('orden')->get()->toArray();
         });
 
         if ($data === null) {
             return response()->json(['message' => 'Programa no encontrado'], 404);
         }
 
-        return response()->json(['message' => 'OK', 'data' => $data, 'count' => count($data)]);
+        return response()->json(['message' => 'OK', 'data' => $data, 'count' => is_array($data) ? count($data) : 0]);
     }
 
     public function criterios(int $tipoProgramaId): JsonResponse
@@ -86,13 +86,13 @@ class ProgramaCatalogController extends Controller
                 return $criterios->groupBy('etapa_id')->map(function ($grupo, $etapaId) {
                     $etapa = ProgramaEtapa::find($etapaId);
                     return [
-                        'etapa' => $etapa,
-                        'criterios' => $grupo->values(),
+                        'etapa' => $etapa ? $etapa->toArray() : null,
+                        'criterios' => $grupo->values()->toArray(),
                     ];
-                })->values();
+                })->values()->toArray();
             }
 
-            return $criterios;
+            return $criterios->toArray();
         });
 
         if ($data === null) {
@@ -110,14 +110,14 @@ class ProgramaCatalogController extends Controller
             $programa = TipoPrograma::find($tipoProgramaId);
             if (!$programa) return null;
 
-            return $programa->rubros()->where('activo', true)->orderBy('nombre')->get();
+            return $programa->rubros()->where('activo', true)->orderBy('nombre')->get()->toArray();
         });
 
         if ($data === null) {
             return response()->json(['message' => 'Programa no encontrado'], 404);
         }
 
-        return response()->json(['message' => 'OK', 'data' => $data, 'count' => count($data)]);
+        return response()->json(['message' => 'OK', 'data' => $data, 'count' => is_array($data) ? count($data) : 0]);
     }
 
     public function etapas(int $tipoProgramaId): JsonResponse
@@ -128,14 +128,14 @@ class ProgramaCatalogController extends Controller
             $programa = TipoPrograma::find($tipoProgramaId);
             if (!$programa) return null;
 
-            return $programa->etapas()->where('activo', true)->orderBy('numero_etapa')->get();
+            return $programa->etapas()->where('activo', true)->orderBy('numero_etapa')->get()->toArray();
         });
 
         if ($data === null) {
             return response()->json(['message' => 'Programa no encontrado'], 404);
         }
 
-        return response()->json(['message' => 'OK', 'data' => $data, 'count' => count($data)]);
+        return response()->json(['message' => 'OK', 'data' => $data, 'count' => is_array($data) ? count($data) : 0]);
     }
 
     public function modalidades(int $tipoProgramaId): JsonResponse
@@ -146,14 +146,14 @@ class ProgramaCatalogController extends Controller
             $programa = TipoPrograma::find($tipoProgramaId);
             if (!$programa) return null;
 
-            return $programa->modalidades()->where('activo', true)->orderBy('nombre')->get();
+            return $programa->modalidades()->where('activo', true)->orderBy('nombre')->get()->toArray();
         });
 
         if ($data === null) {
             return response()->json(['message' => 'Programa no encontrado'], 404);
         }
 
-        return response()->json(['message' => 'OK', 'data' => $data, 'count' => count($data)]);
+        return response()->json(['message' => 'OK', 'data' => $data, 'count' => is_array($data) ? count($data) : 0]);
     }
 
     public function clearCache(int $tipoProgramaId): JsonResponse

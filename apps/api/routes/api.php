@@ -146,6 +146,7 @@ Route::middleware([
             Route::get('stats', [DashboardController::class, 'evaluadorStats']);
             Route::get('asignaciones', [EvaluadorController::class, 'asignaciones']);
             Route::get('asignaciones/{asignacion}', [EvaluadorController::class, 'show']);
+            Route::put('asignaciones/{asignacion}/iniciar-evaluacion', [EvaluadorController::class, 'startEvaluation']);
             Route::post('asignaciones/{asignacion}/dictamen', [EvaluadorController::class, 'saveDictamen']);
         });
 

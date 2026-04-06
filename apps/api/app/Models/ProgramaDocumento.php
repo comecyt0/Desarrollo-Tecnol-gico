@@ -13,6 +13,7 @@ class ProgramaDocumento extends Model
         'tipo_programa_id',
         'etapa_id',
         'nombre',
+        'clave',
         'descripcion',
         'formato_permitido',
         'tamaño_maximo_mb',

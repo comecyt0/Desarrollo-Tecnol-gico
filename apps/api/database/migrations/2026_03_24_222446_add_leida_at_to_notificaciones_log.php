@@ -21,8 +21,12 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('notificaciones_log', function (Blueprint $table) {
-            $table->dropColumnIfExists('leida_at');
-            $table->dropColumnIfExists('descripcion');
+            if (Schema::hasColumn('notificaciones_log', 'leida_at')) {
+                $table->dropColumn('leida_at');
+            }
+            if (Schema::hasColumn('notificaciones_log', 'descripcion')) {
+                $table->dropColumn('descripcion');
+            }
         });
     }
 };

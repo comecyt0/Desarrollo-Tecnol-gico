@@ -29,7 +29,8 @@ class ConvocatoriaController extends Controller
             'fecha_cierre' => 'required|date|after_or_equal:fecha_apertura',
             'monto_maximo_apoyo' => 'nullable|numeric|min:0',
             'porcentaje_aportacion_minima' => 'nullable|numeric|min:0|max:100',
-            'estado' => 'required|in:borrador,activa,cerrada'
+            'estado' => 'required|in:borrador,activa,cerrada',
+            'tipo_programa_id' => 'required|exists:tipo_programas,id'
         ]);
 
         $convocatoria = Convocatoria::create($validated);
@@ -61,7 +62,8 @@ class ConvocatoriaController extends Controller
             'fecha_cierre' => 'date|after_or_equal:fecha_apertura',
             'monto_maximo_apoyo' => 'numeric|min:0',
             'porcentaje_aportacion_minima' => 'numeric|min:0|max:100',
-            'estado' => 'in:borrador,activa,cerrada'
+            'estado' => 'in:borrador,activa,cerrada',
+            'tipo_programa_id' => 'exists:tipo_programas,id'
         ]);
 
         $convocatoria->update($validated);

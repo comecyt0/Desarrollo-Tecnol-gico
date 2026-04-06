@@ -40,7 +40,7 @@ class SolicitudController extends Controller
         $request->validate([
             'convocatoria_id' => 'required|exists:convocatorias,id',
             'titulo_proyecto' => 'required|string|max:255',
-            'modalidad' => 'required|string',
+            'modalidad' => 'nullable|string',
             'area_conocimiento_id' => 'required|integer',
             'descripcion' => 'required|string|max:2000',
             'monto_solicitado' => 'required|numeric|min:1',
@@ -171,10 +171,11 @@ class SolicitudController extends Controller
         }
 
         $solicitud->load([
-            'convocatoria', 
-            'institucion', 
+            'convocatoria.tipoPrograma',
+            'institucion',
             'areaConocimiento',
             'observaciones',
+            'documentos',
             'asignaciones.dictamen',
             'ministracion.banco'
         ]);
@@ -195,6 +196,28 @@ class SolicitudController extends Controller
             return response()->json(['error' => 'Solo las solicitudes en borrador pueden enviarse.'], 422);
         }
 
+        // Validar que todos los documentos obligatorios hayan sido subidos
+        $solicitud->load(['documentos', 'convocatoria.tipoPrograma.documentos']);
+
+        $tipoPrograma = $solicitud->convocatoria?->tipoPrograma;
+        if ($tipoPrograma) {
+            $docsObligatorios = $tipoPrograma->documentos()
+                ->where('obligatorio', true)
+                ->where('activo', true)
+                ->pluck('clave')
+                ->toArray();
+
+            $docsSubidos = $solicitud->documentos->pluck('tipo')->toArray();
+            $docsFaltantes = array_diff($docsObligatorios, $docsSubidos);
+
+            if (!empty($docsFaltantes)) {
+                return response()->json([
+                    'error' => 'Faltan documentos obligatorios para enviar la solicitud.',
+                    'documentos_faltantes' => array_values($docsFaltantes),
+                ], 422);
+            }
+        }
+
         $solicitud->update([
             'estado' => 'enviada',
         ]);
@@ -203,6 +226,30 @@ class SolicitudController extends Controller
         $solicitud->user->notify(new SolicitudEstadoActualizado($solicitud));
 
         return response()->json(['message' => 'Solicitud enviada exitosamente para revisión.', 'solicitud' => $solicitud]);
+    }
+
+    /**
+     * Re-send a solicitud from observada back to enviada state
+     * Used when solicitant corrects observations and resubmits
+     */
+    public function reenviar(Request $request, Solicitud $solicitud)
+    {
+        if ($solicitud->user_id !== $request->user()->id) {
+            return response()->json(['error' => 'No autorizado'], 403);
+        }
+
+        if ($solicitud->estado !== 'observada') {
+            return response()->json(['error' => 'Solo las solicitudes en observada pueden reenviarse.'], 422);
+        }
+
+        $solicitud->update([
+            'estado' => 'enviada',
+        ]);
+
+        // Notificar al revisor que hay una nueva versión
+        $solicitud->user->notify(new SolicitudEstadoActualizado($solicitud));
+
+        return response()->json(['message' => 'Solicitud reenviada exitosamente para re-revisión.', 'solicitud' => $solicitud]);
     }
 
     /**

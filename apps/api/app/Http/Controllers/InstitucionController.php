@@ -18,8 +18,15 @@ class InstitucionController extends Controller
             'nombre'       => 'required|string|max:255|unique:instituciones,nombre',
             'acronimo'     => 'nullable|string|max:20',
             'municipio_id' => 'nullable|exists:municipios,id',
-            'activa'       => 'boolean',
+            'activo'       => 'boolean',
+            'activa'       => 'boolean', // Accept both activo and activa
         ]);
+
+        // Map activa to activo if present
+        if (isset($validated['activa']) && !isset($validated['activo'])) {
+            $validated['activo'] = $validated['activa'];
+        }
+        unset($validated['activa']);
 
         $inst = Institucion::create($validated);
 
@@ -37,8 +44,15 @@ class InstitucionController extends Controller
             'nombre'       => 'sometimes|string|max:255|unique:instituciones,nombre,' . $institucion->id,
             'acronimo'     => 'nullable|string|max:20',
             'municipio_id' => 'nullable|exists:municipios,id',
-            'activa'       => 'boolean',
+            'activo'       => 'boolean',
+            'activa'       => 'boolean', // Accept both activo and activa
         ]);
+
+        // Map activa to activo if present
+        if (isset($validated['activa']) && !isset($validated['activo'])) {
+            $validated['activo'] = $validated['activa'];
+        }
+        unset($validated['activa']);
 
         $institucion->update($validated);
 

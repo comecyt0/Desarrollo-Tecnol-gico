@@ -12,12 +12,13 @@ use Illuminate\Support\Facades\DB;
 class RevisionController extends Controller
 {
     /**
-     * Get solicitudes pending review (estado: enviada o subsanada)
+     * Get solicitudes pending review (estado: enviada o observada)
+     * Nota: 'subsanada' es el estado previo, ahora es 'observada' cuando revisor devuelve para correcciones
      */
     public function pendientes()
     {
         $solicitudes = Solicitud::with(['user', 'institucion', 'convocatoria', 'areaConocimiento'])
-            ->whereIn('estado', ['enviada', 'subsanada'])
+            ->whereIn('estado', ['enviada', 'observada'])
             ->orderBy('updated_at', 'asc')
             ->get();
 
@@ -29,7 +30,7 @@ class RevisionController extends Controller
      */
     public function show(Solicitud $solicitud)
     {
-        $solicitud->load(['user', 'institucion', 'convocatoria', 'areaConocimiento', 'observaciones', 'asignaciones.dictamen', 'ministracion.banco']);
+        $solicitud->load(['user', 'institucion', 'convocatoria', 'areaConocimiento', 'observaciones', 'documentos', 'asignaciones.dictamen', 'ministracion.banco']);
         return response()->json($solicitud);
     }
 
@@ -67,8 +68,8 @@ class RevisionController extends Controller
     {
         $request->validate([
             'observaciones' => 'required|array|min:1',
-            'observaciones.*.campo' => 'nullable|string|max:100',
-            'observaciones.*.comentario' => 'required|string|max:1000',
+            'observaciones.*.campo' => 'required|string|max:100',
+            'observaciones.*.comentario' => 'required|string|min:10|max:1000',
             'observaciones.*.tipo' => 'nullable|string|in:documental,tecnica,financiera'
         ]);
 

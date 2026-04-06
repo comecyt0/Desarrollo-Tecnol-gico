@@ -31,10 +31,12 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->dropColumnIfExists('cargo');
-            $table->dropColumnIfExists('telefono');
-            $table->dropColumnIfExists('rol_id');
-            $table->dropColumnIfExists('institucion_id');
+            $columns = ['cargo', 'telefono', 'rol_id', 'institucion_id'];
+            foreach ($columns as $col) {
+                if (Schema::hasColumn('users', $col)) {
+                    $table->dropColumn($col);
+                }
+            }
         });
     }
 };

@@ -50,6 +50,11 @@ class User extends Authenticatable implements JWTSubject
         return $this->belongsTo(Institucion::class);
     }
 
+    public function evaluador()
+    {
+        return $this->hasOne(Evaluador::class, 'user_id');
+    }
+
     /**
      * Get the identifier that will be stored in the subject claim of the JWT.
      */

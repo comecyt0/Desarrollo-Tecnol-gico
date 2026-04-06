@@ -48,13 +48,27 @@ class DashboardController extends Controller
 
     /**
      * Estadísticas para el Revisor
+     * - nuevos: solicitudes enviadas y sin revisar aún (estado='enviada')
+     * - en_subsanacion: solicitudes con observaciones que esperan correcciones (estado='observada')
+     * - pendientes_urgentes: solicitudes observadas hace más de 7 días sin reenvío (antiguas)
      */
     public function revisorStats()
     {
+        // Solicitudes con estado 'enviada' sin revisar
+        $nuevos = Solicitud::where('estado', 'enviada')->count();
+
+        // Solicitudes con estado 'observada' en proceso de subsanación
+        $en_subsanacion = Solicitud::where('estado', 'observada')->count();
+
+        // Solicitudes 'observada' que llevan más de 7 días sin reenvío (urgentes)
+        $pendientes_urgentes = Solicitud::where('estado', 'observada')
+            ->where('updated_at', '<', now()->subDays(7))
+            ->count();
+
         $stats = [
-            'nuevos' => Solicitud::where('estado', 'enviada')->count(),
-            'en_subsanacion' => Solicitud::where('estado', 'observada')->count(),
-            'pendientes_urgentes' => Solicitud::where('estado', 'en_revision')->count(), // Ejemplo de lógica
+            'nuevos' => $nuevos,
+            'en_subsanacion' => $en_subsanacion,
+            'pendientes_urgentes' => $pendientes_urgentes,
         ];
 
         return response()->json($stats);
@@ -62,12 +76,15 @@ class DashboardController extends Controller
 
     /**
      * Estadísticas para el Evaluador
+     * - por_iniciar: asignaciones con estado 'notificado' (sin empezar)
+     * - en_progreso: asignaciones SIN estado 'notificado' y SIN estado 'concluido' (en proceso)
+     * - evaluadas: asignaciones con estado 'concluido' (evaluación completada)
      */
     public function evaluadorStats(Request $request)
     {
         $user = $request->user();
-        
-        // Asumiendo que el usuario tiene un modelo Evaluador asociado
+
+        // ✅ Cargar el evaluador asociado al usuario
         $evaluador = $user->evaluador;
 
         if (!$evaluador) {
@@ -83,10 +100,11 @@ class DashboardController extends Controller
                 ->where('estado', 'notificado')
                 ->count(),
             'en_progreso' => AsignacionEvaluador::where('evaluador_id', $evaluador->id)
-                ->where('estado', 'en_proceso')
+                ->where('estado', '!=', 'notificado')
+                ->where('estado', '!=', 'concluido')
                 ->count(),
             'evaluadas' => AsignacionEvaluador::where('evaluador_id', $evaluador->id)
-                ->where('estado', 'evaluado')
+                ->where('estado', 'concluido')
                 ->count(),
         ];
 

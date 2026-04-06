@@ -6,13 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Models\TipoPrograma;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Routing\Middleware\Authenticate;
 
 class TipoProgramaController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('auth:api');
-        $this->middleware('admin'); // Must be admin to manage programs
+        // Laravel 11: middleware should be applied via routes or attributes
+        // See routes/api.php for middleware application
     }
 
     /**
