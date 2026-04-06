@@ -17,6 +17,7 @@ use App\Http\Controllers\Admin\ProgramaRubroController;
 use App\Http\Controllers\Admin\ProgramaEtapaController;
 use App\Http\Controllers\Admin\ProgramaModalidadController;
 use App\Http\Controllers\Admin\ProgramaCriterioEvaluacionController;
+use App\Http\Controllers\Admin\ConvenioController;
 use App\Http\Controllers\InformeController;
 use App\Http\Controllers\ListaNegraController;
 use App\Http\Controllers\NotificacionLogController;
@@ -118,7 +119,8 @@ Route::middleware([
             Route::delete('programas/{tipoPrograma}/criterios/{criterio}', [ProgramaCriterioEvaluacionController::class, 'destroy']);
 
             Route::apiResource('convocatorias', ConvocatoriaController::class);
-            Route::apiResource('users', UserController::class);
+            Route::apiResource('usuarios', UserController::class);
+            Route::apiResource('convenios', ConvenioController::class);
             Route::apiResource('ministraciones', MinistracionController::class);
             Route::apiResource('informes', InformeController::class);
             Route::apiResource('instituciones', InstitucionController::class);
@@ -129,6 +131,9 @@ Route::middleware([
             // Asignación de Evaluadores
             Route::post('asignaciones-evaluador', [\App\Http\Controllers\EvaluadorController::class, 'asignar']);
             Route::delete('asignaciones-evaluador/{asignacion}', [\App\Http\Controllers\EvaluadorController::class, 'desasignar']);
+
+            // Convenio generation from solicitud
+            Route::post('solicitudes/{solicitud}/generar-convenio', [ConvenioController::class, 'generate']);
         });
 
         // REVISOR (2)

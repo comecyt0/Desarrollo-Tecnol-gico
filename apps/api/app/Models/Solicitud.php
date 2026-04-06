@@ -66,6 +66,11 @@ class Solicitud extends Model
         return $this->hasOne(Ministracion::class);
     }
 
+    public function convenio()
+    {
+        return $this->hasOne(Convenio::class);
+    }
+
     public function documentos()
     {
         return $this->hasMany(SolicitudDocumento::class);
