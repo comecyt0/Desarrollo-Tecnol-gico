@@ -11,6 +11,7 @@ use App\Models\SolicitudRubroPresupuesto;
 use App\Models\SolicitudMiembroEquipo;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
 use App\Notifications\SolicitudEstadoActualizado;
@@ -261,14 +262,31 @@ class SolicitudController extends Controller
             return response()->json(['error' => 'No autorizado'], 403);
         }
 
+        // Validar que la solicitud no haya superado la fecha límite para informe
+        if ($solicitud->fecha_limite_informe && now() > $solicitud->fecha_limite_informe) {
+            return response()->json([
+                'error' => 'La fecha límite para entregar el informe final ya pasó.',
+                'fecha_limite' => $solicitud->fecha_limite_informe->format('d/m/Y')
+            ], 422);
+        }
+
         $request->validate([
-            'informe_final_url' => 'required|string',
+            'archivo_informe' => 'required|file|mimes:pdf|max:10240', // 10MB limit
+            'resultados_obtenidos' => 'nullable|string|max:2000',
         ]);
 
+        $file = $request->file('archivo_informe');
+        $filename = "{$solicitud->folio}_informe_final_" . time() . ".pdf";
+
+        // Store in public disk: storage/app/public/documentos/{solicitud_id}
+        Storage::disk('public')->putFileAs("documentos/{$solicitud->id}", $file, $filename);
+        $publicUrl = Storage::disk('public')->url("documentos/{$solicitud->id}/{$filename}");
+
         $solicitud->update([
-            'informe_final_url' => $request->informe_final_url,
+            'informe_final_url' => $publicUrl,
             'estado_informe' => 'entregado',
             'fecha_entrega_informe' => now(),
+            'resultados_obtenidos' => $request->resultados_obtenidos,
         ]);
 
         return response()->json([

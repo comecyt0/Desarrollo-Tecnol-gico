@@ -7,6 +7,7 @@ use App\Models\Convocatoria;
 use App\Models\Solicitud;
 use App\Models\AsignacionEvaluador;
 use App\Models\Dictamen;
+use App\Models\Ministracion;
 use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
@@ -40,6 +41,24 @@ class DashboardController extends Controller
                 'value' => (string) Solicitud::where('estado', 'aprobada')->count(),
                 'icon' => 'CheckCircle2',
                 'color' => 'text-green-600'
+            ],
+            [
+                'title' => 'Ministraciones Pendientes',
+                'value' => (string) Ministracion::where('estado', 'pendiente')->count(),
+                'icon' => 'Clock',
+                'color' => 'text-orange-500'
+            ],
+            [
+                'title' => 'Informes Entregados',
+                'value' => (string) Solicitud::where('estado_informe', 'entregado')->count(),
+                'icon' => 'FileText',
+                'color' => 'text-blue-600'
+            ],
+            [
+                'title' => 'Pagos Completados',
+                'value' => (string) Ministracion::where('estado', 'pagada')->count(),
+                'icon' => 'CheckCircle2',
+                'color' => 'text-emerald-600'
             ],
         ];
 
