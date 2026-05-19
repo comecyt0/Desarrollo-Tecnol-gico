@@ -17,19 +17,23 @@ use Symfony\Component\HttpFoundation\Response;
 class ApiGatewayMiddleware
 {
     private const MAX_DISTINCT_IPS = 1000;
+
     private const IP_WINDOW_SECONDS = 60;
+
     private const LOCKDOWN_CACHE_KEY = 'api_gateway_lockdown';
+
     private const IPS_SET_KEY = 'api_gateway_ips';
 
     public function handle(Request $request, Closure $next): Response
     {
         // Verificar si hay lockdown activo
         if (Cache::has(self::LOCKDOWN_CACHE_KEY)) {
-            $ttl = Cache::get(self::LOCKDOWN_CACHE_KEY . '_ttl', 0);
+            $ttl = Cache::get(self::LOCKDOWN_CACHE_KEY.'_ttl', 0);
+
             return response()->json([
-                'error'   => 'Service Unavailable',
+                'error' => 'Service Unavailable',
                 'message' => 'El sistema está temporalmente no disponible por actividad inusual. Intenta más tarde.',
-                'code'    => 503,
+                'code' => 503,
             ], 503, [
                 'Retry-After' => $ttl,
             ]);
@@ -46,7 +50,7 @@ class ApiGatewayMiddleware
 
         // Purgar IPs fuera de la ventana de tiempo
         $cutoff = now()->timestamp - self::IP_WINDOW_SECONDS;
-        $ips = array_filter($ips, fn($ts) => $ts >= $cutoff);
+        $ips = array_filter($ips, fn ($ts) => $ts >= $cutoff);
 
         Cache::put($ipsKey, $ips, self::IP_WINDOW_SECONDS + 10);
 
@@ -56,18 +60,18 @@ class ApiGatewayMiddleware
         if ($distinctIpCount >= $maxIps) {
             $lockdownSeconds = $lockdownMinutes * 60;
             Cache::put(self::LOCKDOWN_CACHE_KEY, true, $lockdownSeconds);
-            Cache::put(self::LOCKDOWN_CACHE_KEY . '_ttl', $lockdownSeconds, $lockdownSeconds);
+            Cache::put(self::LOCKDOWN_CACHE_KEY.'_ttl', $lockdownSeconds, $lockdownSeconds);
 
             \Log::critical('API GATEWAY LOCKDOWN ACTIVADO', [
                 'distinct_ips' => $distinctIpCount,
-                'threshold'    => $maxIps,
+                'threshold' => $maxIps,
                 'lockdown_min' => $lockdownMinutes,
             ]);
 
             return response()->json([
-                'error'   => 'Service Unavailable',
+                'error' => 'Service Unavailable',
                 'message' => 'El sistema detectó actividad anormal y está en modo de protección.',
-                'code'    => 503,
+                'code' => 503,
             ], 503);
         }
 

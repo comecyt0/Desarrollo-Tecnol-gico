@@ -31,7 +31,7 @@ return new class extends Migration
                 'fecha_entrega_informe',
                 'estado_informe',
                 'observaciones_informe',
-                'fecha_limite_informe'
+                'fecha_limite_informe',
             ]);
         });
     }

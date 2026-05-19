@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\TipoPrograma;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Routing\Middleware\Authenticate;
 
 class TipoProgramaController extends Controller
 {
@@ -64,7 +63,7 @@ class TipoProgramaController extends Controller
         }
 
         // Validate num_etapas matches tiene_etapas
-        if ($validated['tiene_etapas'] && !($validated['num_etapas'] ?? null)) {
+        if ($validated['tiene_etapas'] && ! ($validated['num_etapas'] ?? null)) {
             return response()->json(['message' => 'num_etapas requerido cuando tiene_etapas es true'], 422);
         }
 
@@ -72,7 +71,7 @@ class TipoProgramaController extends Controller
 
         return response()->json([
             'message' => 'Programa creado exitosamente',
-            'data' => $programa
+            'data' => $programa,
         ], 201);
     }
 
@@ -82,7 +81,7 @@ class TipoProgramaController extends Controller
     public function update(Request $request, TipoPrograma $tipoPrograma)
     {
         $validated = $request->validate([
-            'clave' => 'string|unique:tipo_programas,clave,' . $tipoPrograma->id . '|max:20',
+            'clave' => 'string|unique:tipo_programas,clave,'.$tipoPrograma->id.'|max:20',
             'nombre' => 'string|max:255',
             'descripcion' => 'nullable|string',
             'tipo_apoyo' => 'in:reembolso,concurrente,honorarios',
@@ -110,7 +109,7 @@ class TipoProgramaController extends Controller
         }
 
         // Validate num_etapas matches tiene_etapas
-        if (($validated['tiene_etapas'] ?? false) && !($validated['num_etapas'] ?? null)) {
+        if (($validated['tiene_etapas'] ?? false) && ! ($validated['num_etapas'] ?? null)) {
             return response()->json(['message' => 'num_etapas requerido cuando tiene_etapas es true'], 422);
         }
 
@@ -121,7 +120,7 @@ class TipoProgramaController extends Controller
 
         return response()->json([
             'message' => 'Programa actualizado exitosamente',
-            'data' => $tipoPrograma->refresh()
+            'data' => $tipoPrograma->refresh(),
         ]);
     }
 
@@ -133,7 +132,7 @@ class TipoProgramaController extends Controller
         // Check if program has solicitudes - prevent deletion
         if ($tipoPrograma->solicitudes()->exists()) {
             return response()->json([
-                'message' => 'No se puede eliminar un programa con solicitudes asociadas'
+                'message' => 'No se puede eliminar un programa con solicitudes asociadas',
             ], 409);
         }
 
@@ -143,7 +142,7 @@ class TipoProgramaController extends Controller
         $this->clearProgramCache($tipoPrograma->id);
 
         return response()->json([
-            'message' => 'Programa eliminado exitosamente'
+            'message' => 'Programa eliminado exitosamente',
         ]);
     }
 

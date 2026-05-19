@@ -3,7 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use App\Models\AsignacionEvaluador; // Added this line for the relationship
+
+// Added this line for the relationship
 
 class Dictamen extends Model
 {
@@ -16,7 +17,7 @@ class Dictamen extends Model
         'puntaje_total',
         'comentarios_justificacion',
         'sujeto_apoyo',
-        'documento_formato_b_url'
+        'documento_formato_b_url',
     ];
 
     protected $table = 'dictamenes';
@@ -51,7 +52,7 @@ class Dictamen extends Model
         static::saving(function ($dictamen) {
             // Si puntaje_total ya viene seteado (path dinámico: el controller lo calculó),
             // no recalcular. Solo aplica en path legacy (4 criterios hardcodeados).
-            if (!isset($dictamen->puntaje_total) || $dictamen->puntaje_total === null) {
+            if (! isset($dictamen->puntaje_total) || $dictamen->puntaje_total === null) {
                 $dictamen->puntaje_total = ($dictamen->criterio_1_puntaje ?? 0) +
                                            ($dictamen->criterio_2_puntaje ?? 0) +
                                            ($dictamen->criterio_3_puntaje ?? 0) +

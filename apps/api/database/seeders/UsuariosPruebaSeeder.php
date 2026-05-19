@@ -2,9 +2,9 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
-use App\Models\Rol;
 use App\Models\Institucion;
+use App\Models\Rol;
+use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -26,7 +26,7 @@ class UsuariosPruebaSeeder extends Seeder
         $solicitanteRol = Rol::where('slug', 'solicitante')->first();
 
         // Usuario Revisor (asd@asd.com - Compatible con sesiones anteriores)
-        User::updateOrCreate(
+        $revisor = User::updateOrCreate(
             ['email' => 'asd@asd.com'],
             [
                 'name' => 'Revisor COMECYT',
@@ -39,6 +39,9 @@ class UsuariosPruebaSeeder extends Seeder
                 'remember_token' => Str::random(10),
             ]
         );
+        // Forzar re-hash del password para garantizar acceso
+        $revisor->password = Hash::make('password123');
+        $revisor->save();
 
         // Usuario Evaluador Técnico
         $uaemex = Institucion::firstOrCreate(
@@ -48,11 +51,11 @@ class UsuariosPruebaSeeder extends Seeder
                 'tipo' => 'publica',
                 'estado' => 'Estado de México',
                 'municipio' => 'Toluca',
-                'activo' => true
+                'activo' => true,
             ]
         );
 
-        User::updateOrCreate(
+        $evaluador = User::updateOrCreate(
             ['email' => 'evaluadorr@uaemex.mx'],
             [
                 'name' => 'Evaluador UAEMEX',
@@ -65,9 +68,12 @@ class UsuariosPruebaSeeder extends Seeder
                 'remember_token' => Str::random(10),
             ]
         );
+        // Forzar re-hash del password para garantizar acceso
+        $evaluador->password = Hash::make('password123');
+        $evaluador->save();
 
         // Usuario Solicitante de ejemplo
-        User::updateOrCreate(
+        $solicitante = User::updateOrCreate(
             ['email' => 'solicitante@institucion.mx'],
             [
                 'name' => 'Investigador Ejemplo',
@@ -80,6 +86,9 @@ class UsuariosPruebaSeeder extends Seeder
                 'remember_token' => Str::random(10),
             ]
         );
+        // Forzar re-hash del password para garantizar acceso
+        $solicitante->password = Hash::make('password123');
+        $solicitante->save();
 
         $this->command->info('Usuarios de prueba creados:');
         $this->command->info('  - Revisor: asd@asd.com / password123');

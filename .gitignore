@@ -3,6 +3,13 @@
 .env.local
 .env.*.local
 
+# Claude Code workspace (local)
+.claude/
+CLAUDE.local.md
+
+# Drafts y recursos sueltos no versionables
+untitled folder/
+
 # Dependencias
 node_modules/
 vendor/

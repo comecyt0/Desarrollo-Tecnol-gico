@@ -13,16 +13,16 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            if (!Schema::hasColumn('users', 'cargo')) {
+            if (! Schema::hasColumn('users', 'cargo')) {
                 $table->string('cargo')->nullable()->after('name');
             }
-            if (!Schema::hasColumn('users', 'telefono')) {
+            if (! Schema::hasColumn('users', 'telefono')) {
                 $table->string('telefono', 20)->nullable()->after('cargo');
             }
-            if (!Schema::hasColumn('users', 'rol_id')) {
+            if (! Schema::hasColumn('users', 'rol_id')) {
                 $table->unsignedBigInteger('rol_id')->nullable()->after('telefono');
             }
-            if (!Schema::hasColumn('users', 'institucion_id')) {
+            if (! Schema::hasColumn('users', 'institucion_id')) {
                 $table->unsignedBigInteger('institucion_id')->nullable()->after('rol_id');
             }
         });

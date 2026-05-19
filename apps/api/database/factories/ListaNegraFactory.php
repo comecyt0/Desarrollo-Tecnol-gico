@@ -2,12 +2,12 @@
 
 namespace Database\Factories;
 
-use App\Models\ListaNegra;
 use App\Models\Institucion;
+use App\Models\ListaNegra;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\ListaNegra>
+ * @extends Factory<ListaNegra>
  */
 class ListaNegraFactory extends Factory
 {
@@ -16,15 +16,15 @@ class ListaNegraFactory extends Factory
     public function definition(): array
     {
         return [
-            'institucion_id'         => Institucion::factory(),
-            'solicitud_id'           => null,
-            'sancionado_por'         => null,
-            'motivo'                 => fake()->sentence(),
-            'fecha_inicio_sancion'   => now()->subMonth()->toDateString(),
-            'fecha_fin_sancion'      => null,
-            'activa'                 => true,
-            'created_at'             => now(),
-            'updated_at'             => now(),
+            'institucion_id' => Institucion::factory(),
+            'solicitud_id' => null,
+            'sancionado_por' => null,
+            'motivo' => fake()->sentence(),
+            'fecha_inicio_sancion' => now()->subMonth()->toDateString(),
+            'fecha_fin_sancion' => null,
+            'activa' => true,
+            'created_at' => now(),
+            'updated_at' => now(),
         ];
     }
 

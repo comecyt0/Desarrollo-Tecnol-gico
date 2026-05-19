@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\TipoPrograma;
 use App\Models\ProgramaCriterioEvaluacion;
+use App\Models\TipoPrograma;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 
@@ -47,7 +47,7 @@ class ProgramaCriterioEvaluacionController extends Controller
 
         return response()->json([
             'message' => 'Criterio creado exitosamente',
-            'data' => $criterio
+            'data' => $criterio,
         ], 201);
     }
 
@@ -72,7 +72,7 @@ class ProgramaCriterioEvaluacionController extends Controller
 
         return response()->json([
             'message' => 'Criterio actualizado exitosamente',
-            'data' => $criterio
+            'data' => $criterio,
         ]);
     }
 
@@ -87,7 +87,7 @@ class ProgramaCriterioEvaluacionController extends Controller
         $this->clearProgramCache($tipoPrograma->id);
 
         return response()->json([
-            'message' => 'Criterio eliminado exitosamente'
+            'message' => 'Criterio eliminado exitosamente',
         ]);
     }
 

@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\NotificacionLog;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class NotificacionLogController extends Controller
@@ -20,7 +20,7 @@ class NotificacionLogController extends Controller
 
         // Solicitantes solo ven sus notificaciones
         $user = Auth::user();
-        if ($user && $user->rol_id === 4) {
+        if ($user && $user->rol_id === config('comecyt.roles.solicitante')) {
             $query->where('user_id', $user->id);
         }
 
@@ -35,14 +35,19 @@ class NotificacionLogController extends Controller
         }
 
         $perPage = $request->get('per_page', 20);
+
         return response()->json($query->paginate($perPage));
     }
 
     /**
-     * Detalle de una notificación.
+     * Detalle de una notificación — solo el dueño puede verla.
      */
-    public function show(NotificacionLog $notificacion)
+    public function show(Request $request, NotificacionLog $notificacion)
     {
+        if ($notificacion->user_id !== $request->user()->id) {
+            return response()->json(['error' => 'No autorizado'], 403);
+        }
+
         return response()->json($notificacion->load(['user', 'solicitud']));
     }
 
@@ -52,6 +57,7 @@ class NotificacionLogController extends Controller
     public function marcarLeida(NotificacionLog $notificacion)
     {
         $notificacion->update(['leida_at' => now()]);
+
         return response()->json(['message' => 'Notificación marcada como leída.', 'leida_at' => now()]);
     }
 
@@ -67,7 +73,7 @@ class NotificacionLogController extends Controller
 
         return response()->json([
             'message' => "Se marcaron {$count} notificaciones como leídas.",
-            'count'   => $count,
+            'count' => $count,
         ]);
     }
 }

@@ -2,18 +2,16 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
-use App\Models\TipoPrograma;
-use App\Models\ProgramaCampo;
-use App\Models\ProgramaRubro;
-use App\Models\ProgramaModalidad;
+use App\Models\AreaConocimiento;
 use App\Models\Convocatoria;
 use App\Models\Institucion;
-use App\Models\AreaConocimiento;
 use App\Models\Rol;
+use App\Models\SolicitudRubroPresupuesto;
+use App\Models\TipoPrograma;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
 use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
+use Tests\TestCase;
 
 /**
  * E2E Integration Test: Full solicitud creation flow
@@ -26,10 +24,15 @@ class IntegrationE2ETest extends TestCase
     use RefreshDatabase;
 
     protected Rol $rolSolicitante;
+
     protected User $user;
+
     protected string $token;
+
     protected Institucion $institucion;
+
     protected TipoPrograma $programa;
+
     protected Convocatoria $convocatoria;
 
     protected function setUp(): void
@@ -125,7 +128,7 @@ class IntegrationE2ETest extends TestCase
 
     private function authed()
     {
-        return $this->withHeader('Authorization', 'Bearer ' . $this->token);
+        return $this->withHeader('Authorization', 'Bearer '.$this->token);
     }
 
     /**
@@ -202,21 +205,21 @@ class IntegrationE2ETest extends TestCase
                     'nombre' => 'Dr. Juan González',
                     'edad' => 35,
                     'rol' => 'Investigador Principal',
-                    'email' => 'juan@institution.edu'
+                    'email' => 'juan@institution.edu',
                 ],
                 [
                     'nombre' => 'Ing. María López',
                     'edad' => 28,
                     'rol' => 'Investigadora Co-responsable',
-                    'email' => 'maria@institution.edu'
+                    'email' => 'maria@institution.edu',
                 ],
                 [
                     'nombre' => 'Tec. Carlos Ruiz',
                     'edad' => 25,
                     'rol' => 'Técnico de Laboratorio',
-                    'email' => null
+                    'email' => null,
                 ],
-            ]
+            ],
         ];
 
         $response = $this->authed()
@@ -262,7 +265,7 @@ class IntegrationE2ETest extends TestCase
         $this->assertDatabaseCount('solicitud_rubros_presupuesto', 3);
 
         // Verify totals sum to monto_solicitado
-        $rubros = \App\Models\SolicitudRubroPresupuesto::where('solicitud_id', $solicitudId)->get();
+        $rubros = SolicitudRubroPresupuesto::where('solicitud_id', $solicitudId)->get();
         $totalMonto = $rubros->sum('monto_solicitado');
         $this->assertEquals(150000, $totalMonto);
     }
@@ -328,7 +331,7 @@ class IntegrationE2ETest extends TestCase
             ],
             'rubros' => [],
             'miembros_equipo' => [
-                ['nombre' => 'Test', 'edad' => 30, 'rol' => 'Lead', 'email' => 'test@test.com']
+                ['nombre' => 'Test', 'edad' => 30, 'rol' => 'Lead', 'email' => 'test@test.com'],
             ],
         ];
 
@@ -360,8 +363,9 @@ class IntegrationE2ETest extends TestCase
         $response = $this->authed()
             ->postJson('/api/solicitudes', $payload);
 
-        // Backend returns 422 with validation error
-        $response->assertStatus(201);  // Backend is permissive, frontend validates
+        // Backend rechaza monto > programa.monto_maximo con 422
+        $response->assertStatus(422);
+        $response->assertJsonPath('errors.monto_solicitado.0', fn ($msg) => str_contains($msg, '200'));
     }
 
     /**
@@ -393,20 +397,20 @@ class IntegrationE2ETest extends TestCase
             'area_conocimiento_id' => 1,
             'descripcion' => 'Con todos los campos del programa',
             'monto_solicitado' => 100000,
-            'campos_dinamicos' => array_map(function($campo) {
+            'campos_dinamicos' => array_map(function ($campo) {
                 return [
                     'campo_id' => $campo['id'],
-                    'valor' => "Valor para {$campo['nombre_campo']}"
+                    'valor' => "Valor para {$campo['nombre_campo']}",
                 ];
             }, $catalog['campos']),
-            'rubros' => array_map(function($rubro) {
+            'rubros' => array_map(function ($rubro) {
                 return [
                     'rubro_id' => $rubro['id'],
-                    'monto' => 20000
+                    'monto' => 20000,
                 ];
             }, $catalog['rubros']),
             'miembros_equipo' => [
-                ['nombre' => 'Lead', 'edad' => 35, 'rol' => 'Lead', 'email' => 'lead@test.com']
+                ['nombre' => 'Lead', 'edad' => 35, 'rol' => 'Lead', 'email' => 'lead@test.com'],
             ],
         ];
 

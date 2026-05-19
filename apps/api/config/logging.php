@@ -54,7 +54,7 @@ return [
 
         'stack' => [
             'driver' => 'stack',
-            'channels' => explode(',', (string) env('LOG_STACK', 'single')),
+            'channels' => explode(',', (string) env('LOG_STACK', 'daily,sentry')),
             'ignore_exceptions' => false,
         ],
 
@@ -69,16 +69,35 @@ return [
             'driver' => 'daily',
             'path' => storage_path('logs/laravel.log'),
             'level' => env('LOG_LEVEL', 'debug'),
-            'days' => env('LOG_DAILY_DAYS', 14),
+            'days' => env('LOG_DAILY_DAYS', 30),
             'replace_placeholders' => true,
         ],
+
+        'security' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/security.log'),
+            'level' => env('LOG_SECURITY_LEVEL', 'warning'),
+            'days' => env('LOG_SECURITY_DAYS', 90),
+            'replace_placeholders' => true,
+        ],
+
+        'sentry' => env('SENTRY_LARAVEL_DSN')
+            ? [
+                'driver' => 'sentry',
+                'level' => env('LOG_SENTRY_LEVEL', 'error'),
+                'bubble' => true,
+            ]
+            : [
+                'driver' => 'monolog',
+                'handler' => NullHandler::class,
+            ],
 
         'slack' => [
             'driver' => 'slack',
             'url' => env('LOG_SLACK_WEBHOOK_URL'),
-            'username' => env('LOG_SLACK_USERNAME', env('APP_NAME', 'Laravel')),
-            'emoji' => env('LOG_SLACK_EMOJI', ':boom:'),
-            'level' => env('LOG_LEVEL', 'critical'),
+            'username' => env('LOG_SLACK_USERNAME', 'COMECYT Alerts'),
+            'emoji' => env('LOG_SLACK_EMOJI', ':rotating_light:'),
+            'level' => env('LOG_SLACK_LEVEL', 'critical'),
             'replace_placeholders' => true,
         ],
 

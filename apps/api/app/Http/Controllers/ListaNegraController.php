@@ -2,9 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-
 use App\Models\ListaNegra;
+use Illuminate\Http\Request;
 
 class ListaNegraController extends Controller
 {
@@ -21,32 +20,32 @@ class ListaNegraController extends Controller
             'motivo' => 'required|string',
             'fecha_inicio_sancion' => 'required|date',
             'fecha_fin_sancion' => 'nullable|date|after_or_equal:fecha_inicio_sancion',
-            'activa' => 'boolean'
+            'activa' => 'boolean',
         ]);
 
-        $validated['sancionado_por'] = $request->user()->id; 
+        $validated['sancionado_por'] = $request->user()->id;
 
         $sancion = ListaNegra::create($validated);
 
         return response()->json([
             'message' => 'Institución agregada a la Lista Negra',
-            'sancion' => $sancion
+            'sancion' => $sancion,
         ], 201);
     }
-    
+
     public function update(Request $request, ListaNegra $listaNegra)
     {
         $validated = $request->validate([
             'activa' => 'required|boolean',
             'fecha_fin_sancion' => 'nullable|date',
-            'motivo' => 'nullable|string'
+            'motivo' => 'nullable|string',
         ]);
 
         $listaNegra->update($validated);
 
         return response()->json([
             'message' => 'Estado de sanción actualizado',
-            'sancion' => $listaNegra
+            'sancion' => $listaNegra,
         ]);
     }
 }

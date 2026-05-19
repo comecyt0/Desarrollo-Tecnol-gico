@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\Convocatoria;
-use App\Models\Solicitud;
 use App\Models\AsignacionEvaluador;
-use App\Models\Dictamen;
+use App\Models\Convocatoria;
+use App\Models\Informe;
 use App\Models\Ministracion;
+use App\Models\Solicitud;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
@@ -22,43 +22,43 @@ class DashboardController extends Controller
                 'title' => 'Convocatorias Activas',
                 'value' => (string) Convocatoria::where('estado', 'activa')->count(),
                 'icon' => 'Bookmark',
-                'color' => 'text-blue-500'
+                'color' => 'text-blue-500',
             ],
             [
                 'title' => 'Solicitudes en Revisión',
-                'value' => (string) Solicitud::whereIn('estado', ['enviada', 'en_revision', 'observada'])->count(),
+                'value' => (string) Solicitud::whereIn('estado', ['enviada', 'observada'])->count(),
                 'icon' => 'FileText',
-                'color' => 'text-amber-500'
+                'color' => 'text-amber-500',
             ],
             [
                 'title' => 'Proyectos Evaluándose',
                 'value' => (string) Solicitud::where('estado', 'en_evaluacion')->count(),
                 'icon' => 'Users',
-                'color' => 'text-accent'
+                'color' => 'text-accent',
             ],
             [
                 'title' => 'Dictámenes Aprobados',
                 'value' => (string) Solicitud::where('estado', 'aprobada')->count(),
                 'icon' => 'CheckCircle2',
-                'color' => 'text-green-600'
+                'color' => 'text-green-600',
             ],
             [
                 'title' => 'Ministraciones Pendientes',
                 'value' => (string) Ministracion::where('estado', 'pendiente')->count(),
                 'icon' => 'Clock',
-                'color' => 'text-orange-500'
+                'color' => 'text-orange-500',
             ],
             [
                 'title' => 'Informes Entregados',
                 'value' => (string) Solicitud::where('estado_informe', 'entregado')->count(),
                 'icon' => 'FileText',
-                'color' => 'text-blue-600'
+                'color' => 'text-blue-600',
             ],
             [
                 'title' => 'Pagos Completados',
                 'value' => (string) Ministracion::where('estado', 'pagada')->count(),
                 'icon' => 'CheckCircle2',
-                'color' => 'text-emerald-600'
+                'color' => 'text-emerald-600',
             ],
         ];
 
@@ -103,26 +103,14 @@ class DashboardController extends Controller
     {
         $user = $request->user();
 
-        // ✅ Cargar el evaluador asociado al usuario
-        $evaluador = $user->evaluador;
-
-        if (!$evaluador) {
-            return response()->json([
-                'por_iniciar' => 0,
-                'en_progreso' => 0,
-                'evaluadas' => 0
-            ]);
-        }
-
         $stats = [
-            'por_iniciar' => AsignacionEvaluador::where('evaluador_id', $evaluador->id)
-                ->where('estado', 'notificado')
+            'por_iniciar' => AsignacionEvaluador::where('evaluador_id', $user->id)
+                ->where('estado', 'asignado')
                 ->count(),
-            'en_progreso' => AsignacionEvaluador::where('evaluador_id', $evaluador->id)
-                ->where('estado', '!=', 'notificado')
-                ->where('estado', '!=', 'concluido')
+            'en_progreso' => AsignacionEvaluador::where('evaluador_id', $user->id)
+                ->where('estado', 'evaluando')
                 ->count(),
-            'evaluadas' => AsignacionEvaluador::where('evaluador_id', $evaluador->id)
+            'evaluadas' => AsignacionEvaluador::where('evaluador_id', $user->id)
                 ->where('estado', 'concluido')
                 ->count(),
         ];
@@ -138,11 +126,11 @@ class DashboardController extends Controller
         // Ejemplo: Solicitudes por mes en el último año
         $activity = Solicitud::select(
             DB::raw("to_char(created_at, 'Mon') as label"),
-            DB::raw("count(*) as value")
+            DB::raw('count(*) as value')
         )
-        ->groupBy('label')
-        ->orderBy(DB::raw("min(created_at)"))
-        ->get();
+            ->groupBy('label')
+            ->orderBy(DB::raw('min(created_at)'))
+            ->get();
 
         return response()->json($activity);
     }
@@ -155,21 +143,21 @@ class DashboardController extends Controller
         $alerts = [];
 
         // 1. Instituciones con informes atrasados (> 20 días)
-        $atrasados = \App\Models\Informe::where('estado', 'pendiente')
+        $atrasados = Informe::where('estado', 'pendiente')
             ->where('fecha_limite_entrega', '<', now()->subDays(20))
             ->count();
-        
+
         if ($atrasados > 0) {
             $alerts[] = [
                 'type' => 'error',
                 'message' => "<strong>{$atrasados} Instituciones</strong> excedieron el límite de 20 días para el informe final.",
                 'color' => 'bg-red-50',
-                'dot' => 'bg-red-500'
+                'dot' => 'bg-red-500',
             ];
         }
 
         // 2. Convocatorias por cerrar (en menos de 7 días)
-        $porCerrar = \App\Models\Convocatoria::where('estado', 'activa')
+        $porCerrar = Convocatoria::where('estado', 'activa')
             ->whereBetween('fecha_cierre', [now(), now()->addDays(7)])
             ->get();
 
@@ -179,7 +167,7 @@ class DashboardController extends Controller
                 'type' => 'warning',
                 'message' => "La convocatoria \"{$conv->titulo}\" cierra en {$days} días.",
                 'color' => 'bg-blue-50',
-                'dot' => 'bg-blue-500'
+                'dot' => 'bg-blue-500',
             ];
         }
 

@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Banco extends Model
 {
     protected $guarded = [];
+
     protected $table = 'bancos';
 
     //

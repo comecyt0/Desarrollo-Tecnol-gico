@@ -16,6 +16,7 @@ use Symfony\Component\HttpFoundation\Response;
 class RateLimitMiddleware
 {
     private const MAX_REQUESTS = 100;
+
     private const WINDOW_SECONDS = 60;
 
     public function handle(Request $request, Closure $next): Response
@@ -27,13 +28,13 @@ class RateLimitMiddleware
 
         if ($attempts >= env('RATE_LIMIT_MAX', self::MAX_REQUESTS)) {
             return response()->json([
-                'error'   => 'Too Many Requests',
+                'error' => 'Too Many Requests',
                 'message' => 'Has excedido el límite de solicitudes. Intenta de nuevo en un minuto.',
-                'code'    => 429,
+                'code' => 429,
             ], 429, [
-                'X-RateLimit-Limit'     => env('RATE_LIMIT_MAX', self::MAX_REQUESTS),
+                'X-RateLimit-Limit' => env('RATE_LIMIT_MAX', self::MAX_REQUESTS),
                 'X-RateLimit-Remaining' => 0,
-                'Retry-After'           => env('RATE_LIMIT_WINDOW', self::WINDOW_SECONDS),
+                'Retry-After' => env('RATE_LIMIT_WINDOW', self::WINDOW_SECONDS),
             ]);
         }
 

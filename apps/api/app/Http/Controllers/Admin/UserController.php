@@ -11,11 +11,26 @@ use Illuminate\Validation\Rules\Password;
 class UserController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Display a listing of the resource, with optional search and pagination.
      */
-    public function index()
+    public function index(Request $request)
     {
-        return response()->json(User::with(['rol', 'institucion'])->orderBy('id', 'desc')->get());
+        $query = User::with(['rol', 'institucion'])->orderBy('id', 'desc');
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'ilike', "%{$search}%")
+                    ->orWhere('email', 'ilike', "%{$search}%");
+            });
+        }
+
+        $perPage = (int) $request->get('per_page', 0);
+        if ($perPage > 0) {
+            return response()->json($query->paginate($perPage));
+        }
+
+        return response()->json($query->get());
     }
 
     /**
@@ -31,7 +46,7 @@ class UserController extends Controller
             'institucion_id' => 'nullable|exists:instituciones,id',
             'telefono' => 'nullable|string|max:20',
             'cargo' => 'nullable|string|max:255',
-            'activo' => 'boolean'
+            'activo' => 'boolean',
         ]);
 
         $validated['password'] = Hash::make($validated['password']);
@@ -40,7 +55,7 @@ class UserController extends Controller
 
         return response()->json([
             'message' => 'Usuario creado con éxito',
-            'user' => $user->load(['rol', 'institucion'])
+            'user' => $user->load(['rol', 'institucion']),
         ], 201);
     }
 
@@ -59,13 +74,13 @@ class UserController extends Controller
     {
         $validated = $request->validate([
             'name' => 'string|max:255',
-            'email' => 'string|email|max:255|unique:users,email,' . $user->id,
+            'email' => 'string|email|max:255|unique:users,email,'.$user->id,
             'password' => ['nullable', Password::defaults()],
             'rol_id' => 'exists:roles,id',
             'institucion_id' => 'nullable|exists:instituciones,id',
             'telefono' => 'nullable|string|max:20',
             'cargo' => 'nullable|string|max:255',
-            'activo' => 'boolean'
+            'activo' => 'boolean',
         ]);
 
         if (isset($validated['password'])) {
@@ -78,19 +93,32 @@ class UserController extends Controller
 
         return response()->json([
             'message' => 'Usuario actualizado con éxito',
-            'user' => $user->load(['rol', 'institucion'])
+            'user' => $user->load(['rol', 'institucion']),
         ]);
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(User $user)
+    public function destroy(Request $request, User $user)
     {
+        // Prevent self-deletion
+        if ($user->id === $request->user()->id) {
+            return response()->json(['message' => 'No puedes eliminar tu propia cuenta.'], 422);
+        }
+
+        // Prevent deleting the last admin
+        if ($user->rol_id === config('comecyt.roles.admin')) {
+            $adminCount = User::where('rol_id', config('comecyt.roles.admin'))->count();
+            if ($adminCount <= 1) {
+                return response()->json(['message' => 'No puedes eliminar el último administrador del sistema.'], 422);
+            }
+        }
+
         $user->delete();
 
         return response()->json([
-            'message' => 'Usuario eliminado con éxito'
+            'message' => 'Usuario eliminado con éxito',
         ]);
     }
 }

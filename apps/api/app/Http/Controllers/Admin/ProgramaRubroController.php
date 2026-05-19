@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\TipoPrograma;
 use App\Models\ProgramaRubro;
+use App\Models\TipoPrograma;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 
@@ -47,7 +47,7 @@ class ProgramaRubroController extends Controller
 
         return response()->json([
             'message' => 'Rubro creado exitosamente',
-            'data' => $rubro
+            'data' => $rubro,
         ], 201);
     }
 
@@ -72,7 +72,7 @@ class ProgramaRubroController extends Controller
 
         return response()->json([
             'message' => 'Rubro actualizado exitosamente',
-            'data' => $rubro
+            'data' => $rubro,
         ]);
     }
 
@@ -87,7 +87,7 @@ class ProgramaRubroController extends Controller
         $this->clearProgramCache($tipoPrograma->id);
 
         return response()->json([
-            'message' => 'Rubro eliminado exitosamente'
+            'message' => 'Rubro eliminado exitosamente',
         ]);
     }
 

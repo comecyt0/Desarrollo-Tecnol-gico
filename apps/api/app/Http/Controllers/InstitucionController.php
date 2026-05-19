@@ -15,15 +15,15 @@ class InstitucionController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'nombre'       => 'required|string|max:255|unique:instituciones,nombre',
-            'acronimo'     => 'nullable|string|max:20',
+            'nombre' => 'required|string|max:255|unique:instituciones,nombre',
+            'acronimo' => 'nullable|string|max:20',
             'municipio_id' => 'nullable|exists:municipios,id',
-            'activo'       => 'boolean',
-            'activa'       => 'boolean', // Accept both activo and activa
+            'activo' => 'boolean',
+            'activa' => 'boolean', // Accept both activo and activa
         ]);
 
         // Map activa to activo if present
-        if (isset($validated['activa']) && !isset($validated['activo'])) {
+        if (isset($validated['activa']) && ! isset($validated['activo'])) {
             $validated['activo'] = $validated['activa'];
         }
         unset($validated['activa']);
@@ -41,15 +41,15 @@ class InstitucionController extends Controller
     public function update(Request $request, Institucion $institucion)
     {
         $validated = $request->validate([
-            'nombre'       => 'sometimes|string|max:255|unique:instituciones,nombre,' . $institucion->id,
-            'acronimo'     => 'nullable|string|max:20',
+            'nombre' => 'sometimes|string|max:255|unique:instituciones,nombre,'.$institucion->id,
+            'acronimo' => 'nullable|string|max:20',
             'municipio_id' => 'nullable|exists:municipios,id',
-            'activo'       => 'boolean',
-            'activa'       => 'boolean', // Accept both activo and activa
+            'activo' => 'boolean',
+            'activa' => 'boolean', // Accept both activo and activa
         ]);
 
         // Map activa to activo if present
-        if (isset($validated['activa']) && !isset($validated['activo'])) {
+        if (isset($validated['activa']) && ! isset($validated['activo'])) {
             $validated['activo'] = $validated['activa'];
         }
         unset($validated['activa']);
@@ -62,6 +62,7 @@ class InstitucionController extends Controller
     public function destroy(Institucion $institucion)
     {
         $institucion->delete();
+
         return response()->json(['message' => 'Institución eliminada']);
     }
 }

@@ -2,9 +2,9 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
-use App\Models\Rol;
 use App\Models\Institucion;
+use App\Models\Rol;
+use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -33,13 +33,13 @@ class DatabaseSeeder extends Seeder
                 'tipo' => 'publica',
                 'estado' => 'Estado de México',
                 'municipio' => 'Toluca',
-                'activo' => true
+                'activo' => true,
             ]
         );
 
         // 3. Admin principal
         $adminRol = Rol::where('slug', 'admin')->first();
-        
+
         User::updateOrCreate(
             ['email' => 'admin@comecyt.gob.mx'],
             [
@@ -56,8 +56,14 @@ class DatabaseSeeder extends Seeder
 
         $this->command->info('Seeders básicos ejecutados: Roles, Institucion COMECYT y Usuario admin (admin@comecyt.gob.mx / password123)');
 
-        // 3.5 Usuarios de prueba (revisor, evaluador, solicitante)
-        $this->call(UsuariosPruebaSeeder::class);
+        // 3.5 Usuarios de prueba — SOLO en entornos locales/testing
+        // NUNCA crear estos usuarios en producción: tienen contraseñas públicas conocidas
+        if (app()->isLocal() || app()->environment('testing')) {
+            $this->call(UsuariosPruebaSeeder::class);
+            $this->command->warn('⚠  UsuariosPruebaSeeder ejecutado (solo disponible en local/testing)');
+        } else {
+            $this->command->info('UsuariosPruebaSeeder omitido en entorno: '.app()->environment());
+        }
 
         // 4. Áreas de conocimiento
         $this->call(AreasConocimientoSeeder::class);
@@ -75,5 +81,9 @@ class DatabaseSeeder extends Seeder
 
         $this->command->info('Programas dinámicos: PFPI, Prototipos, IPFE, Vinculación, Emprendedores - COMPLETADOS');
         $this->command->info('Documentos por programa y convocatorias reales 2026 - COMPLETADOS');
+
+        // 7. Carrusel de login (slides de bienvenida)
+        $this->call(CarouselSlideSeeder::class);
+        $this->command->info('Carrusel de login - COMPLETADO');
     }
 }

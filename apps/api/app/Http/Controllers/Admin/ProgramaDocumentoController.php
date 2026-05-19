@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\TipoPrograma;
 use App\Models\ProgramaDocumento;
+use App\Models\TipoPrograma;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 
@@ -38,7 +38,7 @@ class ProgramaDocumentoController extends Controller
     {
         $validated = $request->validate([
             'nombre' => 'required|string|max:255',
-            'clave' => 'required|string|max:100|unique:programa_documentos,clave,NULL,id,tipo_programa_id,' . $tipoPrograma->id,
+            'clave' => 'required|string|max:100|unique:programa_documentos,clave,NULL,id,tipo_programa_id,'.$tipoPrograma->id,
             'descripcion' => 'nullable|string',
             'obligatorio' => 'boolean',
             'orden' => 'integer|min:0',
@@ -56,7 +56,7 @@ class ProgramaDocumentoController extends Controller
 
         return response()->json([
             'message' => 'Documento creado exitosamente',
-            'data' => $documento
+            'data' => $documento,
         ], 201);
     }
 
@@ -71,7 +71,7 @@ class ProgramaDocumentoController extends Controller
 
         $validated = $request->validate([
             'nombre' => 'string|max:255',
-            'clave' => 'string|max:100|unique:programa_documentos,clave,' . $documento->id . ',id,tipo_programa_id,' . $tipoPrograma->id,
+            'clave' => 'string|max:100|unique:programa_documentos,clave,'.$documento->id.',id,tipo_programa_id,'.$tipoPrograma->id,
             'descripcion' => 'nullable|string',
             'obligatorio' => 'boolean',
             'orden' => 'integer|min:0',
@@ -87,7 +87,7 @@ class ProgramaDocumentoController extends Controller
 
         return response()->json([
             'message' => 'Documento actualizado exitosamente',
-            'data' => $documento
+            'data' => $documento,
         ]);
     }
 
@@ -105,7 +105,7 @@ class ProgramaDocumentoController extends Controller
         $this->clearProgramCache($tipoPrograma->id);
 
         return response()->json([
-            'message' => 'Documento eliminado exitosamente'
+            'message' => 'Documento eliminado exitosamente',
         ]);
     }
 

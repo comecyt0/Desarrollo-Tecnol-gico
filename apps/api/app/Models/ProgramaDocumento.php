@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class ProgramaDocumento extends Model
 {
     use HasFactory;
+
     protected $fillable = [
         'tipo_programa_id',
         'etapa_id',

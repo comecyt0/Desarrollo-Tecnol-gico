@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers\Catalogos;
 
-use App\Models\TipoPrograma;
 use App\Models\ProgramaEtapa;
+use App\Models\TipoPrograma;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Cache;
@@ -18,18 +18,18 @@ class ProgramaCatalogController extends Controller
 
         $data = Cache::remember($cacheKey, self::CACHE_TTL, function () use ($tipoProgramaId) {
             $programa = TipoPrograma::with([
-                'modalidades' => fn($q) => $q->where('activo', true)->orderBy('nombre'),
-                'etapas' => fn($q) => $q->where('activo', true)->orderBy('numero_etapa'),
-                'campos' => fn($q) => $q->where('activo', true)->orderBy('orden'),
-                'documentos' => fn($q) => $q->where('activo', true)->orderBy('orden'),
-                'rubros' => fn($q) => $q->where('activo', true)->orderBy('nombre'),
-                'criterios' => fn($q) => $q->where('activo', true)->orderBy('orden'),
+                'modalidades' => fn ($q) => $q->where('activo', true)->orderBy('nombre'),
+                'etapas' => fn ($q) => $q->where('activo', true)->orderBy('numero_etapa'),
+                'campos' => fn ($q) => $q->where('activo', true)->orderBy('orden'),
+                'documentos' => fn ($q) => $q->where('activo', true)->orderBy('orden'),
+                'rubros' => fn ($q) => $q->where('activo', true)->orderBy('nombre'),
+                'criterios' => fn ($q) => $q->where('activo', true)->orderBy('orden'),
             ])->find($tipoProgramaId);
 
             return $programa ? $programa->toArray() : null;
         });
 
-        if (!$data) {
+        if (! $data) {
             return response()->json(['message' => 'Programa no encontrado'], 404);
         }
 
@@ -42,7 +42,9 @@ class ProgramaCatalogController extends Controller
 
         $data = Cache::remember($cacheKey, self::CACHE_TTL, function () use ($tipoProgramaId) {
             $programa = TipoPrograma::find($tipoProgramaId);
-            if (!$programa) return null;
+            if (! $programa) {
+                return null;
+            }
 
             return $programa->campos()->where('activo', true)->orderBy('orden')->get()->toArray();
         });
@@ -60,7 +62,9 @@ class ProgramaCatalogController extends Controller
 
         $data = Cache::remember($cacheKey, self::CACHE_TTL, function () use ($tipoProgramaId) {
             $programa = TipoPrograma::find($tipoProgramaId);
-            if (!$programa) return null;
+            if (! $programa) {
+                return null;
+            }
 
             return $programa->documentos()->where('activo', true)->orderBy('orden')->get()->toArray();
         });
@@ -78,13 +82,16 @@ class ProgramaCatalogController extends Controller
 
         $data = Cache::remember($cacheKey, self::CACHE_TTL, function () use ($tipoProgramaId) {
             $programa = TipoPrograma::find($tipoProgramaId);
-            if (!$programa) return null;
+            if (! $programa) {
+                return null;
+            }
 
             $criterios = $programa->criterios()->where('activo', true)->orderBy('orden')->get();
 
             if ($programa->tiene_etapas) {
                 return $criterios->groupBy('etapa_id')->map(function ($grupo, $etapaId) {
                     $etapa = ProgramaEtapa::find($etapaId);
+
                     return [
                         'etapa' => $etapa ? $etapa->toArray() : null,
                         'criterios' => $grupo->values()->toArray(),
@@ -108,7 +115,9 @@ class ProgramaCatalogController extends Controller
 
         $data = Cache::remember($cacheKey, self::CACHE_TTL, function () use ($tipoProgramaId) {
             $programa = TipoPrograma::find($tipoProgramaId);
-            if (!$programa) return null;
+            if (! $programa) {
+                return null;
+            }
 
             return $programa->rubros()->where('activo', true)->orderBy('nombre')->get()->toArray();
         });
@@ -126,7 +135,9 @@ class ProgramaCatalogController extends Controller
 
         $data = Cache::remember($cacheKey, self::CACHE_TTL, function () use ($tipoProgramaId) {
             $programa = TipoPrograma::find($tipoProgramaId);
-            if (!$programa) return null;
+            if (! $programa) {
+                return null;
+            }
 
             return $programa->etapas()->where('activo', true)->orderBy('numero_etapa')->get()->toArray();
         });
@@ -144,7 +155,9 @@ class ProgramaCatalogController extends Controller
 
         $data = Cache::remember($cacheKey, self::CACHE_TTL, function () use ($tipoProgramaId) {
             $programa = TipoPrograma::find($tipoProgramaId);
-            if (!$programa) return null;
+            if (! $programa) {
+                return null;
+            }
 
             return $programa->modalidades()->where('activo', true)->orderBy('nombre')->get()->toArray();
         });

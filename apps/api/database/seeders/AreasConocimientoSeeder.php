@@ -4,7 +4,6 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
 class AreasConocimientoSeeder extends Seeder
 {
@@ -23,14 +22,14 @@ class AreasConocimientoSeeder extends Seeder
             'Ciencias Sociales',
             'Biotecnología y Ciencias Agropecuarias',
             'Ingenierías',
-            'Investigación Multidisciplinaria'
+            'Investigación Multidisciplinaria',
         ];
 
         foreach ($areas as $area) {
             DB::table('areas_conocimiento')->updateOrInsert(
                 ['nombre' => $area],
                 [
-                    'descripcion' => 'Área de ' . $area,
+                    'descripcion' => 'Área de '.$area,
                     'activo' => true,
                     'created_at' => now(),
                     'updated_at' => now(),

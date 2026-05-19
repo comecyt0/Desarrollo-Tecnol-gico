@@ -10,7 +10,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Convocatoria extends Model
 {
     use HasFactory;
+
     protected $guarded = [];
+
     protected $table = 'convocatorias';
 
     public function tipoPrograma(): BelongsTo

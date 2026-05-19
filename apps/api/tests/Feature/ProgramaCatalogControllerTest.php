@@ -2,24 +2,25 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
-use App\Models\TipoPrograma;
 use App\Models\ProgramaCampo;
-use App\Models\ProgramaDocumento;
 use App\Models\ProgramaCriterioEvaluacion;
-use App\Models\ProgramaRubro;
+use App\Models\ProgramaDocumento;
 use App\Models\ProgramaEtapa;
 use App\Models\ProgramaModalidad;
+use App\Models\ProgramaRubro;
+use App\Models\TipoPrograma;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
-use Tests\TestCase;
 use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
+use Tests\TestCase;
 
 class ProgramaCatalogControllerTest extends TestCase
 {
     use RefreshDatabase;
 
     protected User $user;
+
     protected string $token;
 
     protected function setUp(): void
@@ -31,7 +32,7 @@ class ProgramaCatalogControllerTest extends TestCase
 
     private function authed()
     {
-        return $this->withHeader('Authorization', 'Bearer ' . $this->token);
+        return $this->withHeader('Authorization', 'Bearer '.$this->token);
     }
 
     // ===== CAMPOS TESTS =====
@@ -57,12 +58,12 @@ class ProgramaCatalogControllerTest extends TestCase
 
         ProgramaCampo::factory()->count(2)->create([
             'tipo_programa_id' => $programa->id,
-            'activo' => true
+            'activo' => true,
         ]);
 
         ProgramaCampo::factory()->create([
             'tipo_programa_id' => $programa->id,
-            'activo' => false
+            'activo' => false,
         ]);
 
         $response = $this->authed()
@@ -78,19 +79,19 @@ class ProgramaCatalogControllerTest extends TestCase
         ProgramaCampo::factory()->create([
             'tipo_programa_id' => $programa->id,
             'nombre_campo' => 'field_3',
-            'orden' => 3
+            'orden' => 3,
         ]);
 
         ProgramaCampo::factory()->create([
             'tipo_programa_id' => $programa->id,
             'nombre_campo' => 'field_1',
-            'orden' => 1
+            'orden' => 1,
         ]);
 
         ProgramaCampo::factory()->create([
             'tipo_programa_id' => $programa->id,
             'nombre_campo' => 'field_2',
-            'orden' => 2
+            'orden' => 2,
         ]);
 
         $response = $this->authed()
@@ -125,12 +126,12 @@ class ProgramaCatalogControllerTest extends TestCase
 
         ProgramaDocumento::factory()->count(2)->create([
             'tipo_programa_id' => $programa->id,
-            'activo' => true
+            'activo' => true,
         ]);
 
         ProgramaDocumento::factory()->create([
             'tipo_programa_id' => $programa->id,
-            'activo' => false
+            'activo' => false,
         ]);
 
         $response = $this->authed()
@@ -175,22 +176,22 @@ class ProgramaCatalogControllerTest extends TestCase
 
         $etapa1 = ProgramaEtapa::factory()->create([
             'tipo_programa_id' => $programa->id,
-            'numero_etapa' => 1
+            'numero_etapa' => 1,
         ]);
 
         $etapa2 = ProgramaEtapa::factory()->create([
             'tipo_programa_id' => $programa->id,
-            'numero_etapa' => 2
+            'numero_etapa' => 2,
         ]);
 
         ProgramaCriterioEvaluacion::factory()->count(2)->create([
             'tipo_programa_id' => $programa->id,
-            'etapa_id' => $etapa1->id
+            'etapa_id' => $etapa1->id,
         ]);
 
         ProgramaCriterioEvaluacion::factory()->count(3)->create([
             'tipo_programa_id' => $programa->id,
-            'etapa_id' => $etapa2->id
+            'etapa_id' => $etapa2->id,
         ]);
 
         $response = $this->authed()
@@ -198,9 +199,15 @@ class ProgramaCatalogControllerTest extends TestCase
 
         $data = $response->json('data');
         $this->assertCount(2, $data);
-        $this->assertCount(2, $data[0]['criterios']);
-        $this->assertCount(3, $data[1]['criterios']);
-        $this->assertNotNull($data[0]['etapa']);
+
+        // Buscar grupos por ID de etapa (no por índice — el orden puede variar)
+        $group1 = collect($data)->first(fn ($g) => $g['etapa']['id'] === $etapa1->id);
+        $group2 = collect($data)->first(fn ($g) => $g['etapa']['id'] === $etapa2->id);
+
+        $this->assertNotNull($group1, 'Grupo de etapa 1 no encontrado en la respuesta');
+        $this->assertNotNull($group2, 'Grupo de etapa 2 no encontrado en la respuesta');
+        $this->assertCount(2, $group1['criterios']);
+        $this->assertCount(3, $group2['criterios']);
     }
 
     public function test_criterios_returns_404_for_nonexistent_programa()
@@ -234,12 +241,12 @@ class ProgramaCatalogControllerTest extends TestCase
 
         ProgramaRubro::factory()->count(2)->create([
             'tipo_programa_id' => $programa->id,
-            'activo' => true
+            'activo' => true,
         ]);
 
         ProgramaRubro::factory()->create([
             'tipo_programa_id' => $programa->id,
-            'activo' => false
+            'activo' => false,
         ]);
 
         $response = $this->authed()
@@ -280,19 +287,19 @@ class ProgramaCatalogControllerTest extends TestCase
         ProgramaEtapa::factory()->create([
             'tipo_programa_id' => $programa->id,
             'numero_etapa' => 3,
-            'nombre' => 'Etapa 3'
+            'nombre' => 'Etapa 3',
         ]);
 
         ProgramaEtapa::factory()->create([
             'tipo_programa_id' => $programa->id,
             'numero_etapa' => 1,
-            'nombre' => 'Etapa 1'
+            'nombre' => 'Etapa 1',
         ]);
 
         ProgramaEtapa::factory()->create([
             'tipo_programa_id' => $programa->id,
             'numero_etapa' => 2,
-            'nombre' => 'Etapa 2'
+            'nombre' => 'Etapa 2',
         ]);
 
         $response = $this->authed()
@@ -335,12 +342,12 @@ class ProgramaCatalogControllerTest extends TestCase
 
         ProgramaModalidad::factory()->count(2)->create([
             'tipo_programa_id' => $programa->id,
-            'activo' => true
+            'activo' => true,
         ]);
 
         ProgramaModalidad::factory()->create([
             'tipo_programa_id' => $programa->id,
-            'activo' => false
+            'activo' => false,
         ]);
 
         $response = $this->authed()
@@ -391,69 +398,70 @@ class ProgramaCatalogControllerTest extends TestCase
         $response->assertStatus(404);
     }
 
-    // ===== AUTHENTICATION TESTS =====
+    // ===== PUBLIC ACCESS TESTS =====
+    // Estas rutas son públicas (no requieren auth) — el solicitante las usa antes de login
 
-    public function test_unauthenticated_user_cannot_access_campos()
+    public function test_unauthenticated_user_can_access_campos()
     {
         $programa = TipoPrograma::factory()->create();
 
         $response = $this->getJson("/api/catalogs/programa/{$programa->id}/campos");
 
-        $response->assertStatus(401);
+        $response->assertStatus(200);
     }
 
-    public function test_unauthenticated_user_cannot_access_documentos()
+    public function test_unauthenticated_user_can_access_documentos()
     {
         $programa = TipoPrograma::factory()->create();
 
         $response = $this->getJson("/api/catalogs/programa/{$programa->id}/documentos");
 
-        $response->assertStatus(401);
+        $response->assertStatus(200);
     }
 
-    public function test_unauthenticated_user_cannot_access_criterios()
+    public function test_unauthenticated_user_can_access_criterios()
     {
         $programa = TipoPrograma::factory()->create();
 
         $response = $this->getJson("/api/catalogs/programa/{$programa->id}/criterios");
 
-        $response->assertStatus(401);
+        $response->assertStatus(200);
     }
 
-    public function test_unauthenticated_user_cannot_access_rubros()
+    public function test_unauthenticated_user_can_access_rubros()
     {
         $programa = TipoPrograma::factory()->create();
 
         $response = $this->getJson("/api/catalogs/programa/{$programa->id}/rubros");
 
-        $response->assertStatus(401);
+        $response->assertStatus(200);
     }
 
-    public function test_unauthenticated_user_cannot_access_etapas()
+    public function test_unauthenticated_user_can_access_etapas()
     {
         $programa = TipoPrograma::factory()->create();
 
         $response = $this->getJson("/api/catalogs/programa/{$programa->id}/etapas");
 
-        $response->assertStatus(401);
+        $response->assertStatus(200);
     }
 
-    public function test_unauthenticated_user_cannot_access_modalidades()
+    public function test_unauthenticated_user_can_access_modalidades()
     {
         $programa = TipoPrograma::factory()->create();
 
         $response = $this->getJson("/api/catalogs/programa/{$programa->id}/modalidades");
 
-        $response->assertStatus(401);
+        $response->assertStatus(200);
     }
 
-    public function test_unauthenticated_user_cannot_access_show()
+    public function test_unauthenticated_user_can_access_show()
     {
         $programa = TipoPrograma::factory()->create();
 
         $response = $this->getJson("/api/catalogs/programa/{$programa->id}");
 
-        $response->assertStatus(401);
+        $response->assertStatus(200);
     }
 
     // ===== CACHING TESTS =====
@@ -478,7 +486,7 @@ class ProgramaCatalogControllerTest extends TestCase
         $this->assertCount(1, $response2->json('data'));
     }
 
-    public function test_clearCache_invalidates_all_cached_keys()
+    public function test_clear_cache_invalidates_all_cached_keys()
     {
         $programa = TipoPrograma::factory()
             ->has(ProgramaCampo::factory()->count(1), 'campos')

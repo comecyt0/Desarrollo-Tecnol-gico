@@ -30,14 +30,14 @@ class ConvocatoriaController extends Controller
             'monto_maximo_apoyo' => 'nullable|numeric|min:0',
             'porcentaje_aportacion_minima' => 'nullable|numeric|min:0|max:100',
             'estado' => 'required|in:borrador,activa,cerrada',
-            'tipo_programa_id' => 'required|exists:tipo_programas,id'
+            'tipo_programa_id' => 'required|exists:tipo_programas,id',
         ]);
 
         $convocatoria = Convocatoria::create($validated);
 
         return response()->json([
             'message' => 'Convocatoria creada con éxito',
-            'convocatoria' => $convocatoria
+            'convocatoria' => $convocatoria,
         ], 201);
     }
 
@@ -63,14 +63,14 @@ class ConvocatoriaController extends Controller
             'monto_maximo_apoyo' => 'numeric|min:0',
             'porcentaje_aportacion_minima' => 'numeric|min:0|max:100',
             'estado' => 'in:borrador,activa,cerrada',
-            'tipo_programa_id' => 'exists:tipo_programas,id'
+            'tipo_programa_id' => 'exists:tipo_programas,id',
         ]);
 
         $convocatoria->update($validated);
 
         return response()->json([
             'message' => 'Convocatoria actualizada con éxito',
-            'convocatoria' => $convocatoria
+            'convocatoria' => $convocatoria,
         ]);
     }
 }

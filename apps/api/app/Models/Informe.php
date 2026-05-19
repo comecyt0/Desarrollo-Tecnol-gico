@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Informe extends Model
 {
     protected $guarded = [];
+
     protected $table = 'informes';
 
     public function solicitud()

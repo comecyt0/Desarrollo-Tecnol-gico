@@ -13,8 +13,9 @@ class Observacion extends Model
         'tipo',
         'comentario',
         'resuelta',
-        'respuesta_solicitante'
+        'respuesta_solicitante',
     ];
+
     protected $table = 'observaciones';
 
     /**

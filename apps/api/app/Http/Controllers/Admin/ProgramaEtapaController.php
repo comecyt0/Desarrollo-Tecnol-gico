@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\TipoPrograma;
 use App\Models\ProgramaEtapa;
+use App\Models\TipoPrograma;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 
@@ -47,7 +47,7 @@ class ProgramaEtapaController extends Controller
 
         return response()->json([
             'message' => 'Etapa creada exitosamente',
-            'data' => $etapa
+            'data' => $etapa,
         ], 201);
     }
 
@@ -72,7 +72,7 @@ class ProgramaEtapaController extends Controller
 
         return response()->json([
             'message' => 'Etapa actualizada exitosamente',
-            'data' => $etapa
+            'data' => $etapa,
         ]);
     }
 
@@ -87,7 +87,7 @@ class ProgramaEtapaController extends Controller
         $this->clearProgramCache($tipoPrograma->id);
 
         return response()->json([
-            'message' => 'Etapa eliminada exitosamente'
+            'message' => 'Etapa eliminada exitosamente',
         ]);
     }
 

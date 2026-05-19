@@ -6,7 +6,7 @@ use App\Models\Institucion;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Institucion>
+ * @extends Factory<Institucion>
  */
 class InstitucionFactory extends Factory
 {
@@ -15,19 +15,19 @@ class InstitucionFactory extends Factory
     public function definition(): array
     {
         return [
-            'nombre'              => fake()->company(),
-            'acronimo'            => fake()->lexify('????'),
-            'tipo'                => fake()->randomElement(['publica', 'privada', 'centro_investigacion']),
-            'estado'              => 'Estado de México',
-            'municipio'           => fake()->word(),
-            'direccion'           => fake()->streetAddress(),
-            'telefono'            => fake()->phoneNumber(),
-            'correo'              => fake()->companyEmail(),
+            'nombre' => fake()->company(),
+            'acronimo' => fake()->lexify('????'),
+            'tipo' => fake()->randomElement(['publica', 'privada', 'centro_investigacion']),
+            'estado' => 'Estado de México',
+            'municipio' => fake()->word(),
+            'direccion' => fake()->streetAddress(),
+            'telefono' => fake()->phoneNumber(),
+            'correo' => fake()->companyEmail(),
             'representante_legal' => fake()->name(),
-            'activo'              => true,
-            'en_lista_negra'      => false,
-            'created_at'          => now(),
-            'updated_at'          => now(),
+            'activo' => true,
+            'en_lista_negra' => false,
+            'created_at' => now(),
+            'updated_at' => now(),
         ];
     }
 

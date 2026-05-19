@@ -1,33 +1,36 @@
 <?php
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Auth\AuthController;
-use App\Http\Controllers\Solicitudes\SolicitudController;
-use App\Http\Controllers\Solicitudes\RevisionController;
-use App\Http\Controllers\Convocatorias\ConvocatoriaController;
-use App\Http\Controllers\Evaluaciones\EvaluadorController;
-use App\Http\Controllers\Catalogos\CatalogoController;
-use App\Http\Controllers\Catalogos\ProgramaCatalogController;
-use App\Http\Controllers\Admin\UserController;
-use App\Http\Controllers\Admin\TipoProgramaController;
+use App\Http\Controllers\Admin\CarouselController;
+use App\Http\Controllers\Admin\ConvenioController;
 use App\Http\Controllers\Admin\ProgramaCampoController;
+use App\Http\Controllers\Admin\ProgramaCriterioEvaluacionController;
 use App\Http\Controllers\Admin\ProgramaDocumentoController;
-use App\Http\Controllers\Admin\ProgramaRubroController;
 use App\Http\Controllers\Admin\ProgramaEtapaController;
 use App\Http\Controllers\Admin\ProgramaModalidadController;
-use App\Http\Controllers\Admin\ProgramaCriterioEvaluacionController;
-use App\Http\Controllers\Admin\ConvenioController;
-use App\Http\Controllers\InformeController;
-use App\Http\Controllers\ListaNegraController;
-use App\Http\Controllers\NotificacionLogController;
+use App\Http\Controllers\Admin\ProgramaRubroController;
+use App\Http\Controllers\Admin\TipoProgramaController;
+use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\Auth\PasswordResetController;
+use App\Http\Controllers\Auth\RegistroAccesoController;
+use App\Http\Controllers\Catalogos\CatalogoController;
+use App\Http\Controllers\Catalogos\ProgramaCatalogController;
+use App\Http\Controllers\Convocatorias\ConvocatoriaController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DocumentoController;
+use App\Http\Controllers\DocumentoUploadController;
+use App\Http\Controllers\Evaluaciones\EvaluadorController;
+use App\Http\Controllers\InformeController;
 use App\Http\Controllers\InstitucionController;
+use App\Http\Controllers\ListaNegraController;
 use App\Http\Controllers\MinistracionController;
-use App\Http\Middleware\RateLimitMiddleware;
+use App\Http\Controllers\NotificacionLogController;
+use App\Http\Controllers\Solicitudes\RevisionController;
+use App\Http\Controllers\Solicitudes\SolicitudController;
 use App\Http\Middleware\ApiGatewayMiddleware;
 use App\Http\Middleware\CircuitBreakerMiddleware;
+use App\Http\Middleware\RateLimitMiddleware;
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
@@ -39,7 +42,7 @@ use App\Http\Middleware\CircuitBreakerMiddleware;
 Route::middleware([
     ApiGatewayMiddleware::class,
     CircuitBreakerMiddleware::class,
-    RateLimitMiddleware::class
+    RateLimitMiddleware::class,
 ])->group(function () {
 
     // === AUTH ===
@@ -48,7 +51,14 @@ Route::middleware([
         Route::post('login', [AuthController::class, 'login'])
             ->middleware('auth.login.ratelimit');
         // Route::post('register', [AuthController::class, 'register']);
+
+        // Password Reset (public — no authentication required)
+        Route::post('forgot-password', [PasswordResetController::class, 'sendResetLink'])->middleware('throttle:3,1');
+        Route::post('reset-password', [PasswordResetController::class, 'reset'])->middleware('throttle:5,1');
     });
+
+    // === REGISTRO / SOLICITUD DE ACCESO (public) ===
+    Route::post('auth/solicitar-acceso', [RegistroAccesoController::class, 'store'])->middleware('throttle:3,5');
 
     // === PUBLIC CATALOGS (No authentication required) ===
     Route::group(['prefix' => 'catalogs/programa'], function () {
@@ -61,6 +71,9 @@ Route::middleware([
         Route::get('{tipo_programa_id}', [ProgramaCatalogController::class, 'show']);
     });
 
+    // Carousel público (login page) — no authentication required
+    Route::get('carousel/slides', [CarouselController::class, 'publicIndex']);
+
     // === PROTECTED ROUTES ===
     Route::group(['middleware' => 'api.auth'], function () {
 
@@ -68,6 +81,7 @@ Route::middleware([
             Route::post('logout', [AuthController::class, 'logout']);
             Route::post('refresh', [AuthController::class, 'refresh']);
             Route::get('me', [AuthController::class, 'me']);
+            Route::put('change-password', [AuthController::class, 'changePassword']);
         });
 
         // Agrupación por Roles (Ejemplo inicial, los controllers completos se implementan en fase 2)
@@ -121,31 +135,59 @@ Route::middleware([
             Route::delete('programas/{tipoPrograma}/criterios/{criterio}', [ProgramaCriterioEvaluacionController::class, 'destroy']);
 
             Route::apiResource('convocatorias', ConvocatoriaController::class);
-            Route::apiResource('usuarios', UserController::class);
+            Route::apiResource('usuarios', UserController::class)->parameters(['usuarios' => 'user']);
             Route::apiResource('convenios', ConvenioController::class);
-            Route::apiResource('ministraciones', MinistracionController::class);
-            Route::apiResource('informes', InformeController::class);
-            Route::apiResource('instituciones', InstitucionController::class);
+            Route::apiResource('ministraciones', MinistracionController::class)->parameters(['ministraciones' => 'ministracion']);
+            Route::apiResource('informes', InformeController::class)->parameters(['informes' => 'informe']);
+            Route::apiResource('instituciones', InstitucionController::class)->parameters(['instituciones' => 'institucion']);
             Route::apiResource('lista-negra', ListaNegraController::class);
             Route::apiResource('notificaciones', NotificacionLogController::class)->only(['index', 'show']);
             Route::post('notificaciones/{notificacion}/leer', [NotificacionLogController::class, 'marcarLeida']);
             Route::post('notificaciones/leer-todas', [NotificacionLogController::class, 'marcarTodasLeidas']);
             // Asignación de Evaluadores
-            Route::post('asignaciones-evaluador', [\App\Http\Controllers\EvaluadorController::class, 'asignar']);
-            Route::delete('asignaciones-evaluador/{asignacion}', [\App\Http\Controllers\EvaluadorController::class, 'desasignar']);
+            Route::post('asignaciones-evaluador', [EvaluadorController::class, 'asignar']);
+            Route::delete('asignaciones-evaluador/{asignacion}', [EvaluadorController::class, 'desasignar']);
 
-            // Convenio generation from solicitud
+            // Carousel management
+            Route::get('carousel', [CarouselController::class, 'index']);
+            Route::post('carousel', [CarouselController::class, 'store']);
+            Route::put('carousel/{carouselSlide}', [CarouselController::class, 'update']);
+            Route::delete('carousel/{carouselSlide}', [CarouselController::class, 'destroy']);
+
+            // Convenio generation from solicitud + state transitions
             Route::post('solicitudes/{solicitud}/generar-convenio', [ConvenioController::class, 'generate']);
+            Route::post('solicitudes/{solicitud}/cerrar', [SolicitudController::class, 'cerrar']);
+            Route::post('solicitudes/{solicitud}/seguimiento', [SolicitudController::class, 'iniciarSeguimiento']);
+            Route::post('solicitudes/{solicitud}/rechazar', [SolicitudController::class, 'rechazar']);
+            Route::post('solicitudes/{solicitud}/cancelar', [SolicitudController::class, 'cancelar']);
+            Route::get('solicitudes', [SolicitudController::class, 'adminIndex']);
+
+            // Solicitudes de Acceso (registro de nuevos usuarios)
+            Route::get('solicitudes-acceso', [RegistroAccesoController::class, 'index']);
+            Route::post('solicitudes-acceso/{solicitudAcceso}/aprobar', [RegistroAccesoController::class, 'aprobar']);
+            Route::post('solicitudes-acceso/{solicitudAcceso}/rechazar', [RegistroAccesoController::class, 'rechazar']);
+
+            // Solicitudes de Recuperación de Contraseña
+            Route::get('reset-requests', [PasswordResetController::class, 'adminIndex']);
+            Route::post('reset-requests/{resetRequest}/aprobar', [PasswordResetController::class, 'adminApprove']);
+            Route::post('reset-requests/{resetRequest}/rechazar', [PasswordResetController::class, 'adminReject']);
+
+            // Reportes — solo admin
+            Route::get('reportes/excel', [DocumentoController::class, 'exportExcel']);
         });
 
         // REVISOR (2)
         Route::group(['prefix' => 'revisor', 'middleware' => 'revisor'], function () {
             Route::get('stats', [DashboardController::class, 'revisorStats']);
             Route::get('solicitudes/pendientes', [RevisionController::class, 'pendientes']);
+            Route::get('solicitudes/completadas', [RevisionController::class, 'completadas']);
+            Route::get('solicitudes/observadas', [RevisionController::class, 'observadas']);
             Route::get('solicitudes/{solicitud}', [RevisionController::class, 'show']);
             Route::post('solicitudes/{solicitud}/aprobar', [RevisionController::class, 'approve']);
             Route::post('solicitudes/{solicitud}/observar', [RevisionController::class, 'observe']);
             Route::post('solicitudes/{solicitud}/aprobar-informe', [RevisionController::class, 'approveInforme']);
+            Route::get('informes', [InformeController::class, 'index']);
+            Route::put('informes/{informe}', [InformeController::class, 'update']);
         });
 
         // EVALUADOR (3)
@@ -160,6 +202,11 @@ Route::middleware([
         // CATALOGOS GENERALES (Todos los autenticados)
         Route::get('catalogos', [CatalogoController::class, 'index']);
 
+        // NOTIFICACIONES DEL USUARIO AUTENTICADO (todos los roles)
+        Route::get('mis-notificaciones', [NotificacionLogController::class, 'index']);
+        Route::post('mis-notificaciones/{notificacion}/leer', [NotificacionLogController::class, 'marcarLeida']);
+        Route::post('mis-notificaciones/leer-todas', [NotificacionLogController::class, 'marcarTodasLeidas']);
+
         // CATALOGS - Cache management (requires authentication/admin)
         Route::delete('catalogs/programa/{tipo_programa_id}/cache', [ProgramaCatalogController::class, 'clearCache']);
 
@@ -172,13 +219,15 @@ Route::middleware([
             Route::post('{solicitud}/enviar', [SolicitudController::class, 'enviar']);
             Route::post('{solicitud}/reenviar', [SolicitudController::class, 'reenviar']);
             Route::post('{solicitud}/informe', [SolicitudController::class, 'submitInforme']);
-            Route::post('{solicitud}/documentos', [\App\Http\Controllers\DocumentoUploadController::class, 'upload']);
-            Route::delete('{solicitud}/documentos/{documento}', [\App\Http\Controllers\DocumentoUploadController::class, 'destroy']);
+            Route::post('{solicitud}/documentos', [DocumentoUploadController::class, 'upload']);
+            Route::delete('{solicitud}/documentos/{documento}', [DocumentoUploadController::class, 'destroy']);
+            Route::put('{solicitud}/beneficiario', [SolicitudController::class, 'updateBeneficiario']);
         });
 
-        // === DOCUMENTOS Y REPORTES ===
+        // === DOCUMENTOS — access control enforced inside controller ===
+        // dictamen: admin or the evaluador who authored it
+        // convenio: admin or the solicitud owner
         Route::get('documentos/dictamen/{dictamen}', [DocumentoController::class, 'downloadDictamen']);
         Route::get('documentos/convenio/{solicitud}', [DocumentoController::class, 'downloadConvenio']);
-        Route::get('admin/reportes/excel', [DocumentoController::class, 'exportExcel']);
     });
 });

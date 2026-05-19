@@ -19,35 +19,39 @@ use Symfony\Component\HttpFoundation\Response;
  */
 class CircuitBreakerMiddleware
 {
-    private const STATE_CLOSED    = 'CLOSED';
-    private const STATE_OPEN      = 'OPEN';
-    private const STATE_HALF_OPEN = 'HALF_OPEN';
+    private const STATE_CLOSED = 'CLOSED';
 
-    private const CACHE_KEY_STATE    = 'cb_state';
-    private const CACHE_KEY_FAILURES = 'cb_failures';
-    private const CACHE_KEY_OPENED   = 'cb_opened_at';
+    private const STATE_OPEN = 'OPEN';
+
+    private const STATE_HALF_OPEN = 'HALF_OPEN';
 
     public function handle(Request $request, Closure $next): Response
     {
         $threshold = (int) env('CIRCUIT_BREAKER_THRESHOLD', 5);
-        $timeout   = (int) env('CIRCUIT_BREAKER_TIMEOUT', 30);
+        $timeout = (int) env('CIRCUIT_BREAKER_TIMEOUT', 30);
 
-        $state    = Cache::get(self::CACHE_KEY_STATE, self::STATE_CLOSED);
-        $failures = (int) Cache::get(self::CACHE_KEY_FAILURES, 0);
-        $openedAt = Cache::get(self::CACHE_KEY_OPENED);
+        // Scope per IP so one attacker cannot open the circuit for all users
+        $ip = md5($request->ip());
+        $keyState = "cb_state_{$ip}";
+        $keyFailures = "cb_failures_{$ip}";
+        $keyOpened = "cb_opened_{$ip}";
+
+        $state = Cache::get($keyState, self::STATE_CLOSED);
+        $failures = (int) Cache::get($keyFailures, 0);
+        $openedAt = Cache::get($keyOpened);
 
         // Si está OPEN, verificar si pasó el timeout para pasar a HALF-OPEN
         if ($state === self::STATE_OPEN) {
             $elapsed = now()->timestamp - (int) $openedAt;
 
             if ($elapsed >= $timeout) {
-                Cache::put(self::CACHE_KEY_STATE, self::STATE_HALF_OPEN, 3600);
+                Cache::put($keyState, self::STATE_HALF_OPEN, 3600);
                 $state = self::STATE_HALF_OPEN;
             } else {
                 return response()->json([
-                    'error'   => 'Circuit Breaker Open',
+                    'error' => 'Circuit Breaker Open',
                     'message' => 'El sistema está temporalmente en mantenimiento. Intenta en unos momentos.',
-                    'code'    => 503,
+                    'code' => 503,
                     'retry_after' => $timeout - $elapsed,
                 ], 503);
             }
@@ -56,30 +60,32 @@ class CircuitBreakerMiddleware
         $response = $next($request);
         $statusCode = $response->getStatusCode();
 
-        // Actualizar estado del circuit breaker según la respuesta
-        if ($statusCode >= 500) {
+        // Only count genuine server-side failures (5xx excluding 503 from CB itself).
+        // 4xx errors are client-induced and must not count toward the threshold —
+        // otherwise an attacker could deliberately trigger CB for their own IP.
+        if ($statusCode >= 500 && $statusCode !== 503) {
             $newFailures = $failures + 1;
-            Cache::put(self::CACHE_KEY_FAILURES, $newFailures, 3600);
+            Cache::put($keyFailures, $newFailures, 3600);
 
             if ($newFailures >= $threshold || $state === self::STATE_HALF_OPEN) {
-                // Abrir el circuito
-                Cache::put(self::CACHE_KEY_STATE, self::STATE_OPEN, 3600);
-                Cache::put(self::CACHE_KEY_OPENED, now()->timestamp, 3600);
+                Cache::put($keyState, self::STATE_OPEN, 3600);
+                Cache::put($keyOpened, now()->timestamp, 3600);
 
                 \Log::error('CIRCUIT BREAKER ABIERTO', [
-                    'failures'  => $newFailures,
+                    'ip' => $request->ip(),
+                    'failures' => $newFailures,
                     'threshold' => $threshold,
-                    'state'     => self::STATE_OPEN,
+                    'state' => self::STATE_OPEN,
                 ]);
             }
-        } else {
-            // Respuesta exitosa → resetear contadores (CLOSED / HALF-OPEN → CLOSED)
+        } elseif ($statusCode < 500) {
+            // Respuesta exitosa → resetear contadores
             if ($state === self::STATE_HALF_OPEN) {
-                Cache::forget(self::CACHE_KEY_STATE);
-                Cache::forget(self::CACHE_KEY_FAILURES);
-                Cache::forget(self::CACHE_KEY_OPENED);
+                Cache::forget($keyState);
+                Cache::forget($keyFailures);
+                Cache::forget($keyOpened);
             } elseif ($failures > 0) {
-                Cache::put(self::CACHE_KEY_FAILURES, 0, 3600);
+                Cache::put($keyFailures, 0, 3600);
             }
         }
 

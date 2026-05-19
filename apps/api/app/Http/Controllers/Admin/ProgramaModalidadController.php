@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\TipoPrograma;
 use App\Models\ProgramaModalidad;
+use App\Models\TipoPrograma;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 
@@ -45,7 +45,7 @@ class ProgramaModalidadController extends Controller
 
         return response()->json([
             'message' => 'Modalidad creada exitosamente',
-            'data' => $modalidad
+            'data' => $modalidad,
         ], 201);
     }
 
@@ -68,7 +68,7 @@ class ProgramaModalidadController extends Controller
 
         return response()->json([
             'message' => 'Modalidad actualizada exitosamente',
-            'data' => $modalidad
+            'data' => $modalidad,
         ]);
     }
 
@@ -83,7 +83,7 @@ class ProgramaModalidadController extends Controller
         $this->clearProgramCache($tipoPrograma->id);
 
         return response()->json([
-            'message' => 'Modalidad eliminada exitosamente'
+            'message' => 'Modalidad eliminada exitosamente',
         ]);
     }
 

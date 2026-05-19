@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class ProgramaEtapa extends Model
 {
     use HasFactory;
+
     protected $fillable = [
         'tipo_programa_id',
         'numero_etapa',

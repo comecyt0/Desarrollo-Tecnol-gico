@@ -4,7 +4,8 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
+return new class extends Migration
+{
     public function up(): void
     {
         Schema::create('asignaciones_evaluador', function (Blueprint $table) {
@@ -16,7 +17,7 @@ return new class extends Migration {
             $table->date('fecha_limite')->nullable();
             $table->boolean('carta_imparcialidad_aceptada')->default(false);
             $table->timestamps();
-            
+
             // Un evaluador evalúa una solicitud máximo una vez
             $table->unique(['solicitud_id', 'evaluador_id']);
         });

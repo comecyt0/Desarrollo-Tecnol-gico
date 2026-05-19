@@ -2,27 +2,30 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
+use App\Models\AreaConocimiento;
 use App\Models\Convocatoria;
 use App\Models\Institucion;
-use App\Models\AreaConocimiento;
-use App\Models\Rol;
 use App\Models\ListaNegra;
-use App\Models\SolicitudCampoDinamico;
-use App\Models\SolicitudRubroPresupuesto;
+use App\Models\Rol;
 use App\Models\SolicitudMiembroEquipo;
+use App\Models\TipoPrograma;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
 use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
+use Tests\TestCase;
 
 class SolicitudDinamicoTest extends TestCase
 {
     use RefreshDatabase;
 
     protected User $user;
+
     protected string $token;
+
     protected Convocatoria $convocatoria;
+
     protected Institucion $institucion;
+
     protected Rol $rolSolicitante;
 
     protected function setUp(): void
@@ -35,28 +38,28 @@ class SolicitudDinamicoTest extends TestCase
         $this->institucion = Institucion::factory()->create();
 
         $this->user = User::factory()->create([
-            'rol_id'         => $this->rolSolicitante->id,
+            'rol_id' => $this->rolSolicitante->id,
             'institucion_id' => $this->institucion->id,
         ]);
 
         $this->convocatoria = Convocatoria::factory()->activa()->create();
-        $this->token        = JWTAuth::fromUser($this->user);
+        $this->token = JWTAuth::fromUser($this->user);
     }
 
     private function authed()
     {
-        return $this->withHeader('Authorization', 'Bearer ' . $this->token);
+        return $this->withHeader('Authorization', 'Bearer '.$this->token);
     }
 
     private function basePayload(array $overrides = []): array
     {
         return array_merge([
-            'convocatoria_id'      => $this->convocatoria->id,
-            'titulo_proyecto'      => 'Proyecto de Prueba',
-            'modalidad'            => 'Vinculación',
+            'convocatoria_id' => $this->convocatoria->id,
+            'titulo_proyecto' => 'Proyecto de Prueba',
+            'modalidad' => 'Vinculación',
             'area_conocimiento_id' => 1,
-            'descripcion'          => 'Descripción base del proyecto de prueba.',
-            'monto_solicitado'     => 50000,
+            'descripcion' => 'Descripción base del proyecto de prueba.',
+            'monto_solicitado' => 50000,
         ], $overrides);
     }
 
@@ -114,15 +117,16 @@ class SolicitudDinamicoTest extends TestCase
         $response->assertStatus(422);
     }
 
-    public function test_store_fails_without_modalidad()
+    public function test_store_succeeds_without_modalidad()
     {
+        // modalidad es nullable por diseño — el programa puede no requerirla
         $payload = $this->basePayload();
         unset($payload['modalidad']);
 
         $response = $this->authed()
             ->postJson('/api/solicitudes', $payload);
 
-        $response->assertStatus(422);
+        $response->assertStatus(201);
     }
 
     public function test_store_fails_without_monto_solicitado()
@@ -150,7 +154,7 @@ class SolicitudDinamicoTest extends TestCase
 
         $response = $this->authed()
             ->postJson('/api/solicitudes', $this->basePayload([
-                'convocatoria_id' => $closedConvocatoria->id
+                'convocatoria_id' => $closedConvocatoria->id,
             ]));
 
         $response->assertStatus(422);
@@ -161,13 +165,13 @@ class SolicitudDinamicoTest extends TestCase
     public function test_store_fails_when_user_has_no_institucion()
     {
         $userNoInst = User::factory()->create([
-            'rol_id'         => 1,
+            'rol_id' => 1,
             'institucion_id' => null,
         ]);
 
         $token = JWTAuth::fromUser($userNoInst);
 
-        $response = $this->withHeader('Authorization', 'Bearer ' . $token)
+        $response = $this->withHeader('Authorization', 'Bearer '.$token)
             ->postJson('/api/solicitudes', $this->basePayload());
 
         $response->assertStatus(403)
@@ -178,7 +182,7 @@ class SolicitudDinamicoTest extends TestCase
     {
         ListaNegra::factory()->create([
             'institucion_id' => $this->institucion->id,
-            'activa'         => true,
+            'activa' => true,
         ]);
 
         $response = $this->authed()
@@ -208,7 +212,7 @@ class SolicitudDinamicoTest extends TestCase
             'campos_dinamicos' => [
                 ['campo_id' => 1, 'valor' => 'Valor campo 1'],
                 ['campo_id' => 2, 'valor' => 'Valor campo 2'],
-            ]
+            ],
         ]);
 
         $response = $this->authed()
@@ -219,14 +223,14 @@ class SolicitudDinamicoTest extends TestCase
 
         $this->assertDatabaseCount('solicitud_campos_dinamicos', 2);
         $this->assertDatabaseHas('solicitud_campos_dinamicos', [
-            'solicitud_id'      => $solicitudId,
+            'solicitud_id' => $solicitudId,
             'programa_campo_id' => 1,
-            'valor_texto'       => 'Valor campo 1',
+            'valor_texto' => 'Valor campo 1',
         ]);
         $this->assertDatabaseHas('solicitud_campos_dinamicos', [
-            'solicitud_id'      => $solicitudId,
+            'solicitud_id' => $solicitudId,
             'programa_campo_id' => 2,
-            'valor_texto'       => 'Valor campo 2',
+            'valor_texto' => 'Valor campo 2',
         ]);
     }
 
@@ -249,7 +253,7 @@ class SolicitudDinamicoTest extends TestCase
                 ['rubro_id' => 1, 'monto' => 1000],
                 ['rubro_id' => 2, 'monto' => 0],      // Should be skipped
                 ['rubro_id' => 3, 'monto' => 500],
-            ]
+            ],
         ]);
 
         $response = $this->authed()
@@ -261,13 +265,13 @@ class SolicitudDinamicoTest extends TestCase
         // Only 2 rubros with positive monto should be persisted
         $this->assertDatabaseCount('solicitud_rubros_presupuesto', 2);
         $this->assertDatabaseHas('solicitud_rubros_presupuesto', [
-            'solicitud_id'     => $solicitudId,
-            'rubro_id'         => 1,
+            'solicitud_id' => $solicitudId,
+            'rubro_id' => 1,
             'monto_solicitado' => 1000,
         ]);
         $this->assertDatabaseHas('solicitud_rubros_presupuesto', [
-            'solicitud_id'     => $solicitudId,
-            'rubro_id'         => 3,
+            'solicitud_id' => $solicitudId,
+            'rubro_id' => 3,
             'monto_solicitado' => 500,
         ]);
     }
@@ -277,7 +281,7 @@ class SolicitudDinamicoTest extends TestCase
         $payload = $this->basePayload([
             'rubros' => [
                 ['rubro_id' => 1, 'monto' => 0],
-            ]
+            ],
         ]);
 
         $response = $this->authed()
@@ -307,7 +311,7 @@ class SolicitudDinamicoTest extends TestCase
                 ['nombre' => 'Juan Pérez', 'edad' => 25, 'rol' => 'Líder', 'email' => 'juan@example.com'],
                 ['nombre' => 'María García', 'edad' => 28, 'rol' => 'Desarrolladora', 'email' => 'maria@example.com'],
                 ['nombre' => 'Carlos López', 'edad' => 30, 'rol' => 'Asesor', 'email' => 'carlos@example.com'],
-            ]
+            ],
         ]);
 
         $response = $this->authed()
@@ -318,11 +322,11 @@ class SolicitudDinamicoTest extends TestCase
 
         $this->assertDatabaseCount('solicitud_miembros_equipo', 3);
         $this->assertDatabaseHas('solicitud_miembros_equipo', [
-            'solicitud_id'    => $solicitudId,
+            'solicitud_id' => $solicitudId,
             'nombre_completo' => 'Juan Pérez',
-            'edad'            => 25,
-            'rol_en_equipo'   => 'Líder',
-            'correo'          => 'juan@example.com',
+            'edad' => 25,
+            'rol_en_equipo' => 'Líder',
+            'correo' => 'juan@example.com',
         ]);
     }
 
@@ -332,7 +336,7 @@ class SolicitudDinamicoTest extends TestCase
             'miembros_equipo' => [
                 ['nombre' => 'Primer Miembro', 'edad' => 25, 'rol' => 'Rol1', 'email' => 'first@example.com'],
                 ['nombre' => 'Segundo Miembro', 'edad' => 28, 'rol' => 'Rol2', 'email' => 'second@example.com'],
-            ]
+            ],
         ]);
 
         $response = $this->authed()
@@ -363,7 +367,7 @@ class SolicitudDinamicoTest extends TestCase
 
     public function test_active_convocatorias_includes_tipo_programa_relation()
     {
-        $programa = \App\Models\TipoPrograma::factory()->create();
+        $programa = TipoPrograma::factory()->create();
         $convActiva = Convocatoria::factory()->activa()->create(['tipo_programa_id' => $programa->id]);
         $convCerrada = Convocatoria::factory()->cerrada()->create();
 

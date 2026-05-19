@@ -10,6 +10,7 @@ class Solicitud extends Model
     use SoftDeletes;
 
     protected $guarded = [];
+
     protected $table = 'solicitudes';
 
     protected $casts = [

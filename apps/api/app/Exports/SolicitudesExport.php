@@ -3,6 +3,7 @@
 namespace App\Exports;
 
 use App\Models\Solicitud;
+use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
@@ -10,8 +11,8 @@ use Maatwebsite\Excel\Concerns\WithMapping;
 class SolicitudesExport implements FromCollection, WithHeadings, WithMapping
 {
     /**
-    * @return \Illuminate\Support\Collection
-    */
+     * @return Collection
+     */
     public function collection()
     {
         return Solicitud::with(['user', 'institucion', 'convocatoria'])->get();
@@ -27,7 +28,7 @@ class SolicitudesExport implements FromCollection, WithHeadings, WithMapping
             'Convocatoria',
             'Monto Solicitado',
             'Estado',
-            'Fecha Registro'
+            'Fecha Registro',
         ];
     }
 
@@ -39,7 +40,7 @@ class SolicitudesExport implements FromCollection, WithHeadings, WithMapping
             $solicitud->user->name,
             $solicitud->institucion->nombre ?? 'N/A',
             $solicitud->convocatoria->nombre ?? 'N/A',
-            '$' . number_format($solicitud->monto_solicitado, 2),
+            '$'.number_format($solicitud->monto_solicitado, 2),
             strtoupper($solicitud->estado),
             $solicitud->created_at->format('d/m/Y'),
         ];

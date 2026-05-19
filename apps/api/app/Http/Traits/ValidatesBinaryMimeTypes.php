@@ -21,15 +21,16 @@ trait ValidatesBinaryMimeTypes
      * Valida que el contenido REAL del archivo coincida con el MIME type esperado
      * Utiliza finfo_file para detectar MIME type real, ignorando extensión
      *
-     * @param string $filePath Ruta completa al archivo
-     * @param array $allowedMimes MIME types permitidos (default: ['application/pdf'])
-     * @throws ValidationException si MIME type no coincide
+     * @param  string  $filePath  Ruta completa al archivo
+     * @param  array  $allowedMimes  MIME types permitidos (default: ['application/pdf'])
      * @return string MIME type detectado
+     *
+     * @throws ValidationException si MIME type no coincide
      */
     protected function validateBinaryMimeType(string $filePath, array $allowedMimes = ['application/pdf']): string
     {
         // Validar que el archivo existe
-        if (!file_exists($filePath)) {
+        if (! file_exists($filePath)) {
             throw new ValidationException(
                 Validator::make([], [])
                     ->errors()
@@ -39,7 +40,7 @@ trait ValidatesBinaryMimeTypes
 
         // Abrir finfo para detectar MIME real
         $finfo = finfo_open(FILEINFO_MIME_TYPE);
-        if (!$finfo) {
+        if (! $finfo) {
             throw new ValidationException(
                 Validator::make([], [])
                     ->errors()
@@ -51,11 +52,11 @@ trait ValidatesBinaryMimeTypes
         finfo_close($finfo);
 
         // Validar que MIME está en lista de permitidos
-        if (!in_array($actualMimeType, $allowedMimes)) {
+        if (! in_array($actualMimeType, $allowedMimes)) {
             throw new ValidationException(
                 Validator::make([], [])
                     ->errors()
-                    ->add('file', "El archivo no es válido. Se detectó tipo: {$actualMimeType}, pero se esperaba: " . implode(', ', $allowedMimes))
+                    ->add('file', "El archivo no es válido. Se detectó tipo: {$actualMimeType}, pero se esperaba: ".implode(', ', $allowedMimes))
             );
         }
 

@@ -43,7 +43,7 @@ class ProgramaCriteriosSeeder extends Seeder
                             'activo' => true,
                             'created_at' => now(),
                             'updated_at' => now(),
-                        ]
+                        ],
                     ]);
                 }
             }
@@ -79,7 +79,7 @@ class ProgramaCriteriosSeeder extends Seeder
                             'activo' => true,
                             'created_at' => now(),
                             'updated_at' => now(),
-                        ]
+                        ],
                     ]);
                 }
             }
@@ -109,7 +109,7 @@ class ProgramaCriteriosSeeder extends Seeder
                             'activo' => true,
                             'created_at' => now(),
                             'updated_at' => now(),
-                        ]
+                        ],
                     ]);
                 }
             }

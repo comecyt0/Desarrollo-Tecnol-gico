@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\TipoPrograma;
 use App\Models\ProgramaCampo;
+use App\Models\TipoPrograma;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 
@@ -56,7 +56,7 @@ class ProgramaCampoController extends Controller
 
         return response()->json([
             'message' => 'Campo creado exitosamente',
-            'data' => $campo
+            'data' => $campo,
         ], 201);
     }
 
@@ -87,7 +87,7 @@ class ProgramaCampoController extends Controller
 
         return response()->json([
             'message' => 'Campo actualizado exitosamente',
-            'data' => $campo
+            'data' => $campo,
         ]);
     }
 
@@ -105,7 +105,7 @@ class ProgramaCampoController extends Controller
         $this->clearProgramCache($tipoPrograma->id);
 
         return response()->json([
-            'message' => 'Campo eliminado exitosamente'
+            'message' => 'Campo eliminado exitosamente',
         ]);
     }
 

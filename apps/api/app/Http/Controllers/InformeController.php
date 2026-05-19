@@ -2,9 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-
 use App\Models\Informe;
+use Illuminate\Http\Request;
 
 class InformeController extends Controller
 {
@@ -19,14 +18,14 @@ class InformeController extends Controller
             'solicitud_id' => 'required|exists:solicitudes,id',
             'tipo' => 'nullable|in:intermedio,final',
             'fecha_limite_entrega' => 'required|date',
-            'estado' => 'nullable|in:pendiente,en_revision,aprobado,rechazado'
+            'estado' => 'nullable|in:pendiente,en_revision,aprobado,rechazado',
         ]);
 
         $informe = Informe::create($validated);
 
         return response()->json([
             'message' => 'Seguimiento de Informe creado con éxito',
-            'informe' => $informe
+            'informe' => $informe,
         ], 201);
     }
 
@@ -41,14 +40,27 @@ class InformeController extends Controller
             'estado' => 'in:pendiente,en_revision,aprobado,rechazado',
             'fecha_entregado' => 'nullable|date',
             'resultados_obtenidos' => 'nullable|string',
-            'observaciones' => 'nullable|string'
+            'observaciones' => 'nullable|string',
         ]);
 
         $informe->update($validated);
 
         return response()->json([
             'message' => 'Informe actualizado con éxito',
-            'informe' => $informe
+            'informe' => $informe,
         ]);
+    }
+
+    public function destroy(Informe $informe)
+    {
+        if ($informe->estado !== 'pendiente') {
+            return response()->json([
+                'error' => 'Solo se pueden eliminar informes en estado pendiente.',
+            ], 422);
+        }
+
+        $informe->delete();
+
+        return response()->json(['message' => 'Informe eliminado.']);
     }
 }

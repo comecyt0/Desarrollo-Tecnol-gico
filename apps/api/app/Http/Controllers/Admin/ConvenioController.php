@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Convenio;
 use App\Models\Solicitud;
+use App\Notifications\ConvenioCreado;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class ConvenioController extends Controller
@@ -29,6 +31,7 @@ class ConvenioController extends Controller
     public function show(Convenio $convenio)
     {
         $convenio->load('solicitud.institucion', 'solicitud.convocatoria', 'ministeraciones');
+
         return response()->json($convenio);
     }
 
@@ -67,7 +70,7 @@ class ConvenioController extends Controller
             // Generate unique convenio number
             $year = date('Y');
             $count = Convenio::whereYear('created_at', $year)->count() + 1;
-            $numero_convenio = "COMECYT-{$year}-" . str_pad($count, 3, '0', STR_PAD_LEFT);
+            $numero_convenio = "COMECYT-{$year}-".str_pad($count, 3, '0', STR_PAD_LEFT);
 
             // Create convenio
             $convenio = Convenio::create([
@@ -85,6 +88,17 @@ class ConvenioController extends Controller
 
             DB::commit();
 
+            // Notificar al solicitante que su convenio ha sido generado
+            try {
+                $solicitud->load('user');
+                if ($solicitud->user) {
+                    $solicitud->user->notify(new ConvenioCreado($convenio->load('solicitud.institucion')));
+                }
+            } catch (\Throwable $e) {
+                Log::warning('ConvenioCreado notification failed', ['error' => $e->getMessage()]);
+                // No revertir transacción, el convenio ya fue creado exitosamente
+            }
+
             return response()->json([
                 'message' => 'Convenio generado exitosamente.',
                 'convenio' => $convenio->fresh(),
@@ -92,8 +106,9 @@ class ConvenioController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
+
             return response()->json([
-                'error' => 'Error al generar convenio: ' . $e->getMessage(),
+                'error' => 'Error al generar convenio: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -126,6 +141,7 @@ class ConvenioController extends Controller
         }
 
         $convenio->delete();
+
         return response()->json(['message' => 'Convenio eliminado.']);
     }
 
@@ -139,7 +155,7 @@ class ConvenioController extends Controller
 
         $text = "ACUERDO DE ASIGNACION DE RECURSOS\n\n";
         $text .= "Número de Convenio: {$convenio->numero_convenio}\n";
-        $text .= "Fecha: " . now()->format('d/m/Y') . "\n\n";
+        $text .= 'Fecha: '.now()->format('d/m/Y')."\n\n";
         $text .= "PARTES:\n";
         $text .= "1. COMECYT (Consejo Mexiquense de Ciencia y Tecnología)\n";
         $text .= "2. {$inst->nombre}\n\n";
@@ -156,7 +172,7 @@ class ConvenioController extends Controller
         $text .= "4. Requiere firma de autoridades\n\n";
         $text .= "OBSERVACIONES:\n{$convenio->observaciones}\n\n";
         $text .= "---\nDocumento generado automáticamente por Sistema COMECYT\n";
-        $text .= "Requiere firma de autoridades competentes para validez legal.";
+        $text .= 'Requiere firma de autoridades competentes para validez legal.';
 
         // Save text file as "PDF"
         $path = "public/convenios/{$sol->id}";

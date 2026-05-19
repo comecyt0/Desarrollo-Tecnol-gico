@@ -6,11 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Models\AsignacionEvaluador;
 use App\Models\Dictamen;
 use App\Models\Ministracion;
-use App\Models\Solicitud;
+use App\Models\NotificacionLog;
 use App\Models\ProgramaCriterioEvaluacion;
+use App\Models\Solicitud;
 use App\Models\SolicitudCriterioEvaluacion;
-use App\Notifications\DictamenGenerado;
-use App\Notifications\SolicitudEstadoActualizado;
+use App\Models\User;
+use App\Notifications\EvaluacionCompletada;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -22,12 +23,12 @@ class EvaluadorController extends Controller
     public function asignaciones(Request $request)
     {
         $evaluadorUser = $request->user();
-        
+
         $asignaciones = AsignacionEvaluador::with(['solicitud', 'solicitud.institucion'])
             ->where('evaluador_id', $evaluadorUser->id)
             ->orderBy('estado', 'desc') // asignado, evaluando, concluido
             ->get();
-            
+
         return response()->json($asignaciones);
     }
 
@@ -45,8 +46,9 @@ class EvaluadorController extends Controller
             'solicitud.institucion',
             'solicitud.convocatoria',
             'solicitud.convocatoria.tipoPrograma',
-            'dictamen'
+            'dictamen',
         ]);
+
         return response()->json($asignacion);
     }
 
@@ -83,8 +85,8 @@ class EvaluadorController extends Controller
                 'criterios_puntajes' => 'required|array|min:1',
                 'criterios_puntajes.*.criterio_id' => 'required|integer|exists:programa_criterios_evaluacion,id',
                 'criterios_puntajes.*.puntaje_obtenido' => 'required|numeric|min:0',
-                'comentarios_justificacion' => 'required|string|max:2000',
-                'carta_imparcialidad_aceptada' => 'required|boolean|accepted'
+                'comentarios_justificacion' => 'nullable|string|max:2000',
+                'carta_imparcialidad_aceptada' => 'required|boolean|accepted',
             ]);
 
             // Validar que no todos los puntajes sean 0
@@ -95,7 +97,7 @@ class EvaluadorController extends Controller
             if ($totalPuntaje === 0 || $totalPuntaje < 0) {
                 return response()->json([
                     'error' => 'Debes calificar al menos un criterio. No puedes enviar un dictamen con todos los puntajes en 0.',
-                    'validation_error' => 'total_puntaje_zero'
+                    'validation_error' => 'total_puntaje_zero',
                 ], 422);
             }
         } else {
@@ -105,8 +107,8 @@ class EvaluadorController extends Controller
                 'criterio_2_puntaje' => 'required|numeric|min:0|max:25',
                 'criterio_3_puntaje' => 'required|numeric|min:0|max:25',
                 'criterio_4_puntaje' => 'required|numeric|min:0|max:25',
-                'comentarios_justificacion' => 'required|string|max:2000',
-                'carta_imparcialidad_aceptada' => 'required|boolean|accepted'
+                'comentarios_justificacion' => 'nullable|string|max:2000',
+                'carta_imparcialidad_aceptada' => 'required|boolean|accepted',
             ]);
 
             // Validar que no todos los puntajes sean 0
@@ -119,7 +121,7 @@ class EvaluadorController extends Controller
             if ($totalPuntaje === 0 || $totalPuntaje < 0) {
                 return response()->json([
                     'error' => 'Debes calificar al menos un criterio. No puedes enviar un dictamen con todos los puntajes en 0.',
-                    'validation_error' => 'total_puntaje_zero'
+                    'validation_error' => 'total_puntaje_zero',
                 ], 422);
             }
         }
@@ -153,7 +155,7 @@ class EvaluadorController extends Controller
             if ($isDynamic) {
                 foreach ($request->criterios_puntajes as $cp) {
                     SolicitudCriterioEvaluacion::create([
-                        'solicitud_id' => $solicitud->id,
+                        'dictamen_id' => $dictamen->id,
                         'criterio_id' => $cp['criterio_id'],
                         'puntaje_obtenido' => $cp['puntaje_obtenido'],
                     ]);
@@ -163,14 +165,13 @@ class EvaluadorController extends Controller
             // Update assignment status
             $asignacion->update([
                 'estado' => 'concluido',
-                'carta_imparcialidad_aceptada' => $request->carta_imparcialidad_aceptada ?? false
+                'carta_imparcialidad_aceptada' => $request->carta_imparcialidad_aceptada ?? false,
             ]);
 
             // Actualizar estado de la solicitud
             if ($dictamen->sujeto_apoyo) {
                 $solicitud->update([
                     'estado' => 'aprobada',
-                    'etapa_actual' => 'convenio'
                 ]);
 
                 // CREACIÓN AUTOMÁTICA DE REGISTRO DE MINISTRACIÓN
@@ -182,21 +183,29 @@ class EvaluadorController extends Controller
                 $solicitud->update(['estado' => 'rechazada']);
             }
 
-            // Notificar al solicitante
+            // Notificar al solicitante con resultado de evaluación
             if ($solicitud->user) {
-                $solicitud->user->notify(new SolicitudEstadoActualizado($solicitud));
+                $evaluador = $request->user();
+                $solicitud->user->notify(new EvaluacionCompletada(
+                    $solicitud,
+                    $dictamen->puntaje_total,
+                    $dictamen->sujeto_apoyo,
+                    $dictamen->comentarios_justificacion,
+                    $evaluador->name
+                ));
             }
 
             DB::commit();
 
             return response()->json([
                 'message' => 'Dictamen guardado exitosamente.',
-                'dictamen' => $dictamen->load('asignacion')
+                'dictamen' => $dictamen->load('asignacion'),
             ]);
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['error' => 'Error al guardar dictamen: ' . $e->getMessage()], 500);
+
+            return response()->json(['error' => 'Error al guardar dictamen: '.$e->getMessage()], 500);
         }
     }
 
@@ -205,12 +214,10 @@ class EvaluadorController extends Controller
      */
     public function startEvaluation(AsignacionEvaluador $asignacion)
     {
-        // Validar que pertenece al evaluador autenticado
         if ($asignacion->evaluador_id !== auth('api')->user()->id) {
             return response()->json(['error' => 'No autorizado'], 403);
         }
 
-        // Solo cambiar si el estado es 'asignado'
         if ($asignacion->estado !== 'asignado') {
             return response()->json(['error' => 'La asignación no está en estado asignado'], 422);
         }
@@ -219,7 +226,71 @@ class EvaluadorController extends Controller
 
         return response()->json([
             'message' => 'Evaluación iniciada',
-            'asignacion' => $asignacion
+            'asignacion' => $asignacion,
         ]);
+    }
+
+    /**
+     * ADMIN: Asignar un evaluador a una solicitud.
+     * Estado inicial: 'asignado' (coherente con startEvaluation que verifica este estado).
+     */
+    public function asignar(Request $request)
+    {
+        $validated = $request->validate([
+            'solicitud_id' => 'required|exists:solicitudes,id',
+            'evaluador_id' => 'required|exists:users,id',
+            'fecha_limite' => 'required|date|after:today',
+        ]);
+
+        $evaluador = User::findOrFail($validated['evaluador_id']);
+        if ($evaluador->rol_id !== config('comecyt.roles.evaluador')) {
+            return response()->json(['message' => 'El usuario seleccionado no tiene rol de Evaluador.'], 422);
+        }
+
+        $existente = AsignacionEvaluador::where('solicitud_id', $validated['solicitud_id'])
+            ->where('evaluador_id', $validated['evaluador_id'])
+            ->first();
+
+        if ($existente) {
+            return response()->json(['message' => 'Este evaluador ya está asignado a esta solicitud.'], 422);
+        }
+
+        $asignacion = AsignacionEvaluador::create([
+            'solicitud_id' => $validated['solicitud_id'],
+            'evaluador_id' => $validated['evaluador_id'],
+            'fecha_limite' => $validated['fecha_limite'],
+            'estado' => 'asignado', // Estado canónico inicial
+        ]);
+
+        Solicitud::find($validated['solicitud_id'])->update(['estado' => 'en_evaluacion']);
+
+        NotificacionLog::create([
+            'user_id' => $validated['evaluador_id'],
+            'solicitud_id' => $validated['solicitud_id'],
+            'tipo' => 'nueva_asignacion',
+            'asunto' => 'Nueva solicitud asignada para evaluación',
+            'mensaje' => "Se te ha asignado una solicitud para dictaminación. Fecha límite: {$validated['fecha_limite']}",
+            'correo_destino' => $evaluador->email,
+            'enviado' => false,
+        ]);
+
+        return response()->json([
+            'message' => 'Evaluador asignado correctamente.',
+            'asignacion' => $asignacion->load(['evaluador', 'solicitud']),
+        ], 201);
+    }
+
+    /**
+     * ADMIN: Desasignar un evaluador de una solicitud.
+     */
+    public function desasignar(AsignacionEvaluador $asignacion)
+    {
+        if ($asignacion->estado === 'concluido') {
+            return response()->json(['message' => 'No se puede desasignar una evaluación ya concluida.'], 422);
+        }
+
+        $asignacion->delete();
+
+        return response()->json(['message' => 'Evaluador desasignado correctamente.']);
     }
 }

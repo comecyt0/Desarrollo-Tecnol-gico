@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Rol extends Model
 {
     protected $guarded = [];
+
     protected $table = 'roles';
 
     //
