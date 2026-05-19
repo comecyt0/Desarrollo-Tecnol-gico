@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\AsignacionEvaluador;
 use App\Models\Convocatoria;
 use App\Models\Informe;
+use App\Models\Institucion;
 use App\Models\Ministracion;
 use App\Models\Solicitud;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -133,6 +135,119 @@ class DashboardController extends Controller
             ->get();
 
         return response()->json($activity);
+    }
+
+    /**
+     * Series mensuales para gráficas del dashboard admin.
+     * - Últimos 12 meses
+     * - Por mes: solicitudes recibidas, monto solicitado total, monto aprobado total
+     * - Distribución actual por estado (snapshot)
+     */
+    public function adminCharts()
+    {
+        $start = now()->subMonths(11)->startOfMonth();
+
+        // PostgreSQL: to_char(date, 'YYYY-MM') agrupa correctamente; MySQL usaría DATE_FORMAT
+        $driver = DB::connection()->getDriverName();
+        $monthExpr = $driver === 'pgsql'
+            ? "to_char(s.created_at, 'YYYY-MM')"
+            : "DATE_FORMAT(s.created_at, '%Y-%m')";
+
+        $rows = DB::table('solicitudes as s')
+            ->leftJoin('convenios as c', 'c.solicitud_id', '=', 's.id')
+            ->select(
+                DB::raw("{$monthExpr} as ym"),
+                DB::raw('count(s.id) as solicitudes'),
+                DB::raw('coalesce(sum(s.monto_solicitado), 0) as monto_solicitado'),
+                DB::raw('coalesce(sum(c.monto_aprobado), 0) as monto_aprobado'),
+            )
+            ->where('s.created_at', '>=', $start)
+            ->groupBy(DB::raw($monthExpr))
+            ->orderBy('ym')
+            ->get();
+
+        // Rellenar meses sin datos para que el chart sea continuo
+        $byMonth = collect($rows)->keyBy('ym');
+        $series = [];
+        for ($i = 0; $i < 12; $i++) {
+            $month = $start->copy()->addMonths($i);
+            $key = $month->format('Y-m');
+            $row = $byMonth->get($key);
+            $series[] = [
+                'label' => $month->locale('es')->isoFormat('MMM'),
+                'ym' => $key,
+                'solicitudes' => (int) ($row?->solicitudes ?? 0),
+                'monto_solicitado' => (float) ($row?->monto_solicitado ?? 0),
+                'monto_aprobado' => (float) ($row?->monto_aprobado ?? 0),
+            ];
+        }
+
+        // Distribución por estado (snapshot actual)
+        $distribucion = Solicitud::select('estado', DB::raw('count(*) as total'))
+            ->groupBy('estado')
+            ->orderBy('estado')
+            ->get()
+            ->map(fn ($r) => [
+                'estado' => $r->estado,
+                'total' => (int) $r->total,
+            ]);
+
+        return response()->json([
+            'series_mensual' => $series,
+            'distribucion_estado' => $distribucion,
+        ]);
+    }
+
+    /**
+     * Búsqueda global transversal para el admin.
+     * Acepta ?q=texto (≥2 chars). Busca en solicitudes (folio + titulo),
+     * usuarios (name + email) e instituciones (nombre).
+     * Limita a N por categoría para mantener la respuesta liviana.
+     */
+    public function globalSearch(Request $request)
+    {
+        $q = trim((string) $request->query('q', ''));
+        if (mb_strlen($q) < 2) {
+            return response()->json([
+                'solicitudes' => [],
+                'usuarios' => [],
+                'instituciones' => [],
+            ]);
+        }
+
+        $driver = DB::connection()->getDriverName();
+        $like = $driver === 'pgsql' ? 'ilike' : 'like';
+        $needle = "%{$q}%";
+        $limit = 8;
+
+        $solicitudes = Solicitud::with('institucion:id,nombre')
+            ->where(function ($w) use ($like, $needle) {
+                $w->where('folio', $like, $needle)
+                    ->orWhere('titulo_proyecto', $like, $needle);
+            })
+            ->orderByDesc('created_at')
+            ->limit($limit)
+            ->get(['id', 'folio', 'titulo_proyecto', 'estado', 'institucion_id']);
+
+        $usuarios = User::with('rol:id,slug,nombre')
+            ->where(function ($w) use ($like, $needle) {
+                $w->where('name', $like, $needle)
+                    ->orWhere('email', $like, $needle);
+            })
+            ->orderBy('name')
+            ->limit($limit)
+            ->get(['id', 'name', 'email', 'rol_id', 'activo']);
+
+        $instituciones = Institucion::where('nombre', $like, $needle)
+            ->orderBy('nombre')
+            ->limit($limit)
+            ->get(['id', 'nombre', 'clave']);
+
+        return response()->json([
+            'solicitudes' => $solicitudes,
+            'usuarios' => $usuarios,
+            'instituciones' => $instituciones,
+        ]);
     }
 
     /**

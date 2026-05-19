@@ -44,11 +44,13 @@ class AuthController extends Controller
      */
     public function me()
     {
-        $user = auth()->guard('api')->user();
+        $guard = auth()->guard('api');
+        $user = $guard->user();
         $user->loadMissing('rol', 'institucion');
 
         return response()->json([
             'user' => $user,
+            'expires_at' => $guard->payload()->get('exp'), // epoch seconds
         ]);
     }
 
@@ -120,6 +122,7 @@ class AuthController extends Controller
         $body = [
             'token_type' => 'bearer',
             'expires_in' => $ttlSeconds,
+            'expires_at' => time() + $ttlSeconds, // epoch seconds — usado por frontend para refresh proactivo
             'user' => auth()->guard('api')->user()->load('rol', 'institucion'),
         ];
 

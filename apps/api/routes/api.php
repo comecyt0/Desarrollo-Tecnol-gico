@@ -30,6 +30,8 @@ use App\Http\Controllers\Solicitudes\SolicitudController;
 use App\Http\Middleware\ApiGatewayMiddleware;
 use App\Http\Middleware\CircuitBreakerMiddleware;
 use App\Http\Middleware\RateLimitMiddleware;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -84,6 +86,12 @@ Route::middleware([
             Route::put('change-password', [AuthController::class, 'changePassword']);
         });
 
+        // Broadcasting auth — usado por Laravel Echo para autorizar canales privados
+        // (Reverb hace POST a /api/broadcasting/auth con la cookie HttpOnly + JWT)
+        Route::post('broadcasting/auth', function (Request $request) {
+            return Broadcast::auth($request);
+        });
+
         // Agrupación por Roles (Ejemplo inicial, los controllers completos se implementan en fase 2)
 
         // ADMIN COMECYT (1)
@@ -91,6 +99,8 @@ Route::middleware([
             Route::get('stats', [DashboardController::class, 'adminStats']);
             Route::get('activity', [DashboardController::class, 'adminActivity']);
             Route::get('alerts', [DashboardController::class, 'adminAlerts']);
+            Route::get('charts', [DashboardController::class, 'adminCharts']);
+            Route::get('search', [DashboardController::class, 'globalSearch']);
 
             // PROGRAMAS DINÁMICOS CRUD
             Route::get('programas', [TipoProgramaController::class, 'index']);
