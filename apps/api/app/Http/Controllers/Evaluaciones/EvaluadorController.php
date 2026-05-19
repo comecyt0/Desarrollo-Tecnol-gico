@@ -128,6 +128,11 @@ class EvaluadorController extends Controller
 
         DB::beginTransaction();
         try {
+            // Bloquear el row de la solicitud para serializar a múltiples evaluadores
+            // que concluyen su dictamen simultáneamente sobre la misma solicitud.
+            // Esto previene la creación de ministraciones duplicadas en firstOrCreate.
+            $solicitud = Solicitud::where('id', $solicitud->id)->lockForUpdate()->first();
+
             $dictamenData = [
                 'asignacion_id' => $asignacion->id,
                 'comentarios_justificacion' => $request->comentarios_justificacion,

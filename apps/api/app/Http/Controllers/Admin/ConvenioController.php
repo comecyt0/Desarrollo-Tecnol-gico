@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Convenio;
 use App\Models\Solicitud;
 use App\Notifications\ConvenioCreado;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -67,21 +68,36 @@ class ConvenioController extends Controller
 
         DB::beginTransaction();
         try {
-            // Generate unique convenio number
+            // Generar numero de convenio único. La columna tiene unique constraint a
+            // nivel DB; el reintento en caso de unique_violation protege contra el
+            // race que existía entre count() y INSERT con creaciones concurrentes.
             $year = date('Y');
-            $count = Convenio::whereYear('created_at', $year)->count() + 1;
-            $numero_convenio = "COMECYT-{$year}-".str_pad($count, 3, '0', STR_PAD_LEFT);
+            $convenio = null;
+            $maxRetries = 5;
 
-            // Create convenio
-            $convenio = Convenio::create([
-                'solicitud_id' => $solicitud->id,
-                'numero_convenio' => $numero_convenio,
-                'estado' => 'borrador',
-                'monto_aprobado' => $request->monto_aprobado,
-                'num_tranches' => $request->num_tranches ?? 1,
-                'fecha_generacion' => now(),
-                'observaciones' => $request->observaciones,
-            ]);
+            for ($attempt = 0; $attempt < $maxRetries; $attempt++) {
+                $count = Convenio::whereYear('created_at', $year)->lockForUpdate()->count() + 1 + $attempt;
+                $numero_convenio = 'COMECYT-'.$year.'-'.str_pad($count, 3, '0', STR_PAD_LEFT);
+                try {
+                    $convenio = Convenio::create([
+                        'solicitud_id' => $solicitud->id,
+                        'numero_convenio' => $numero_convenio,
+                        'estado' => 'borrador',
+                        'monto_aprobado' => $request->monto_aprobado,
+                        'num_tranches' => $request->num_tranches ?? 1,
+                        'fecha_generacion' => now(),
+                        'observaciones' => $request->observaciones,
+                    ]);
+                    break;
+                } catch (QueryException $e) {
+                    if (! in_array($e->getCode(), ['23505', '23000'], true)) {
+                        throw $e;
+                    }
+                    if ($attempt === $maxRetries - 1) {
+                        throw $e;
+                    }
+                }
+            }
 
             // Generate content
             $this->generateConvenioContent($convenio);

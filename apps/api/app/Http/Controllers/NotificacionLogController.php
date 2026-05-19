@@ -52,10 +52,14 @@ class NotificacionLogController extends Controller
     }
 
     /**
-     * Marca una notificación como leída.
+     * Marca una notificación como leída — sólo el dueño puede hacerlo.
      */
-    public function marcarLeida(NotificacionLog $notificacion)
+    public function marcarLeida(Request $request, NotificacionLog $notificacion)
     {
+        if ($notificacion->user_id !== $request->user()->id) {
+            return response()->json(['error' => 'No autorizado'], 403);
+        }
+
         $notificacion->update(['leida_at' => now()]);
 
         return response()->json(['message' => 'Notificación marcada como leída.', 'leida_at' => now()]);
@@ -64,9 +68,9 @@ class NotificacionLogController extends Controller
     /**
      * Marca todas las notificaciones del usuario como leídas.
      */
-    public function marcarTodasLeidas()
+    public function marcarTodasLeidas(Request $request)
     {
-        $user = Auth::user();
+        $user = $request->user();
         $count = NotificacionLog::where('user_id', $user->id)
             ->whereNull('leida_at')
             ->update(['leida_at' => now()]);

@@ -15,6 +15,7 @@ use App\Models\SolicitudMiembroEquipo;
 use App\Models\SolicitudRubroPresupuesto;
 use App\Notifications\SolicitudEnviada;
 use App\Notifications\SolicitudEstadoActualizado;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -133,28 +134,39 @@ class SolicitudController extends Controller
         DB::beginTransaction();
         try {
             // Generar folio único: COMECYT-YYYY-RANDOM6
+            // El campo `folio` tiene unique constraint a nivel DB; el reintento
+            // dentro del catch de QueryException protege contra el race que existía
+            // entre el check exists() y el INSERT en concurrencia.
             $year = date('Y');
-            $random = strtoupper(Str::random(6));
-            $folio = "COMECYT-{$year}-{$random}";
+            $solicitud = null;
+            $maxRetries = 5;
 
-            // Asegurar unicidad (reintento simple si el random ya existe)
-            while (Solicitud::where('folio', $folio)->exists()) {
-                $random = strtoupper(Str::random(6));
-                $folio = "COMECYT-{$year}-{$random}";
+            for ($attempt = 0; $attempt < $maxRetries; $attempt++) {
+                $folio = 'COMECYT-'.$year.'-'.strtoupper(Str::random(6));
+                try {
+                    $solicitud = Solicitud::create([
+                        'folio' => $folio,
+                        'user_id' => $user->id,
+                        'institucion_id' => $user->institucion_id,
+                        'convocatoria_id' => $request->convocatoria_id,
+                        'titulo_proyecto' => $request->titulo_proyecto,
+                        'modalidad' => $request->modalidad,
+                        'descripcion_proyecto' => $request->descripcion,
+                        'monto_solicitado' => $request->monto_solicitado,
+                        'area_conocimiento_id' => $request->area_conocimiento_id,
+                        'estado' => 'borrador',
+                    ]);
+                    break;
+                } catch (QueryException $e) {
+                    // 23505 = unique_violation en PostgreSQL, 23000 = integrity en MySQL
+                    if (! in_array($e->getCode(), ['23505', '23000'], true)) {
+                        throw $e;
+                    }
+                    if ($attempt === $maxRetries - 1) {
+                        throw $e;
+                    }
+                }
             }
-
-            $solicitud = Solicitud::create([
-                'folio' => $folio,
-                'user_id' => $user->id,
-                'institucion_id' => $user->institucion_id,
-                'convocatoria_id' => $request->convocatoria_id,
-                'titulo_proyecto' => $request->titulo_proyecto,
-                'modalidad' => $request->modalidad,
-                'descripcion_proyecto' => $request->descripcion,
-                'monto_solicitado' => $request->monto_solicitado,
-                'area_conocimiento_id' => $request->area_conocimiento_id,
-                'estado' => 'borrador',
-            ]);
 
             // Guardar campos dinámicos
             if ($request->has('campos_dinamicos')) {
