@@ -147,11 +147,13 @@ class DashboardController extends Controller
     {
         $start = now()->subMonths(11)->startOfMonth();
 
-        // PostgreSQL: to_char(date, 'YYYY-MM') agrupa correctamente; MySQL usaría DATE_FORMAT
+        // Cada motor tiene su sintaxis para "YYYY-MM" desde una fecha
         $driver = DB::connection()->getDriverName();
-        $monthExpr = $driver === 'pgsql'
-            ? "to_char(s.created_at, 'YYYY-MM')"
-            : "DATE_FORMAT(s.created_at, '%Y-%m')";
+        $monthExpr = match ($driver) {
+            'pgsql' => "to_char(s.created_at, 'YYYY-MM')",
+            'sqlite' => "strftime('%Y-%m', s.created_at)",
+            default => "DATE_FORMAT(s.created_at, '%Y-%m')",
+        };
 
         $rows = DB::table('solicitudes as s')
             ->leftJoin('convenios as c', 'c.solicitud_id', '=', 's.id')
