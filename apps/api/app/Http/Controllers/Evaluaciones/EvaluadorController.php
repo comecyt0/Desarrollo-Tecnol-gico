@@ -12,6 +12,7 @@ use App\Models\Solicitud;
 use App\Models\SolicitudCriterioEvaluacion;
 use App\Models\User;
 use App\Notifications\EvaluacionCompletada;
+use App\Support\Audit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -179,13 +180,23 @@ class EvaluadorController extends Controller
                     'estado' => 'aprobada',
                 ]);
 
-                // CREACIÓN AUTOMÁTICA DE REGISTRO DE MINISTRACIÓN
+                // CREACIÓN AUTOMÁTICA DE REGISTRO DE MINISTRACIÓN (tranche 1)
                 Ministracion::firstOrCreate(
-                    ['solicitud_id' => $solicitud->id],
+                    ['solicitud_id' => $solicitud->id, 'numero_tranche' => 1],
                     ['estado' => 'pendiente']
                 );
+
+                Audit::log('solicitud.aprobada_tecnica', $solicitud, [
+                    'puntaje_total' => $dictamen->puntaje_total,
+                    'dictamen_id' => $dictamen->id,
+                ]);
             } else {
                 $solicitud->update(['estado' => 'rechazada']);
+
+                Audit::log('solicitud.rechazada_tecnica', $solicitud, [
+                    'puntaje_total' => $dictamen->puntaje_total,
+                    'dictamen_id' => $dictamen->id,
+                ]);
             }
 
             // Notificar al solicitante con resultado de evaluación

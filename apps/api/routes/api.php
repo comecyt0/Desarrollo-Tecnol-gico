@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\CarouselController;
 use App\Http\Controllers\Admin\ConvenioController;
 use App\Http\Controllers\Admin\ProgramaCampoController;
@@ -8,6 +9,7 @@ use App\Http\Controllers\Admin\ProgramaDocumentoController;
 use App\Http\Controllers\Admin\ProgramaEtapaController;
 use App\Http\Controllers\Admin\ProgramaModalidadController;
 use App\Http\Controllers\Admin\ProgramaRubroController;
+use App\Http\Controllers\Admin\ReverbStatusController;
 use App\Http\Controllers\Admin\TipoProgramaController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Auth\AuthController;
@@ -27,6 +29,7 @@ use App\Http\Controllers\MinistracionController;
 use App\Http\Controllers\NotificacionLogController;
 use App\Http\Controllers\Solicitudes\RevisionController;
 use App\Http\Controllers\Solicitudes\SolicitudController;
+use App\Http\Controllers\UserPreferenceController;
 use App\Http\Middleware\ApiGatewayMiddleware;
 use App\Http\Middleware\CircuitBreakerMiddleware;
 use App\Http\Middleware\RateLimitMiddleware;
@@ -184,11 +187,19 @@ Route::middleware([
 
             // Reportes — solo admin
             Route::get('reportes/excel', [DocumentoController::class, 'exportExcel']);
+
+            // Audit log
+            Route::get('audit-logs', [AuditLogController::class, 'index']);
+
+            // Reverb health check
+            Route::get('reverb/status', [ReverbStatusController::class, 'status']);
         });
 
         // REVISOR (2)
         Route::group(['prefix' => 'revisor', 'middleware' => 'revisor'], function () {
             Route::get('stats', [DashboardController::class, 'revisorStats']);
+            Route::get('charts', [DashboardController::class, 'revisorCharts']);
+            Route::get('search', [DashboardController::class, 'revisorSearch']);
             Route::get('solicitudes/pendientes', [RevisionController::class, 'pendientes']);
             Route::get('solicitudes/completadas', [RevisionController::class, 'completadas']);
             Route::get('solicitudes/observadas', [RevisionController::class, 'observadas']);
@@ -203,11 +214,18 @@ Route::middleware([
         // EVALUADOR (3)
         Route::group(['prefix' => 'evaluador', 'middleware' => 'evaluador'], function () {
             Route::get('stats', [DashboardController::class, 'evaluadorStats']);
+            Route::get('charts', [DashboardController::class, 'evaluadorCharts']);
+            Route::get('search', [DashboardController::class, 'evaluadorSearch']);
             Route::get('asignaciones', [EvaluadorController::class, 'asignaciones']);
             Route::get('asignaciones/{asignacion}', [EvaluadorController::class, 'show']);
             Route::put('asignaciones/{asignacion}/iniciar-evaluacion', [EvaluadorController::class, 'startEvaluation']);
             Route::post('asignaciones/{asignacion}/dictamen', [EvaluadorController::class, 'saveDictamen']);
         });
+
+        // PREFERENCIAS DEL USUARIO (todos los roles autenticados)
+        Route::get('mis-preferencias', [UserPreferenceController::class, 'index']);
+        Route::post('mis-preferencias', [UserPreferenceController::class, 'store']);
+        Route::delete('mis-preferencias/{preferencia}', [UserPreferenceController::class, 'destroy']);
 
         // CATALOGOS GENERALES (Todos los autenticados)
         Route::get('catalogos', [CatalogoController::class, 'index']);

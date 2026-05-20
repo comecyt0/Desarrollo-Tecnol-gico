@@ -7,6 +7,7 @@ use App\Models\Observacion;
 use App\Models\Solicitud;
 use App\Notifications\SolicitudEstadoActualizado;
 use App\Notifications\SolicitudObservada;
+use App\Support\Audit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -73,8 +74,13 @@ class RevisionController extends Controller
 
         DB::beginTransaction();
         try {
+            $estadoPrevio = $solicitud->estado;
             $solicitud->update([
                 'estado' => 'en_evaluacion',
+            ]);
+
+            Audit::log('solicitud.aprobada_documentalmente', $solicitud, [
+                'estado_previo' => $estadoPrevio,
             ]);
 
             // Notificar al solicitante

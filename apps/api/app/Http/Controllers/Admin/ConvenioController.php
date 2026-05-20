@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Convenio;
 use App\Models\Solicitud;
 use App\Notifications\ConvenioCreado;
+use App\Support\Audit;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -101,6 +102,12 @@ class ConvenioController extends Controller
 
             // Generate content
             $this->generateConvenioContent($convenio);
+
+            Audit::log('convenio.generado', $convenio, [
+                'solicitud_id' => $solicitud->id,
+                'monto_aprobado' => $convenio->monto_aprobado,
+                'num_tranches' => $convenio->num_tranches,
+            ]);
 
             DB::commit();
 
