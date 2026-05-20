@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Support\Audit;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -95,6 +96,31 @@ class AuthController extends Controller
         $user->update(['password' => Hash::make($request->new_password)]);
 
         return response()->json(['message' => 'Contraseña actualizada correctamente.']);
+    }
+
+    /**
+     * Permite que el usuario autenticado actualice su propio perfil
+     * (institución, teléfono, cargo, nombre). Usado por el onboarding
+     * del solicitante en el primer login. NO permite cambiar rol ni email.
+     *
+     * @return JsonResponse
+     */
+    public function updateProfile(Request $request)
+    {
+        $data = $request->validate([
+            'name' => 'sometimes|string|max:255',
+            'institucion_id' => 'sometimes|nullable|exists:instituciones,id',
+            'telefono' => 'sometimes|nullable|string|max:20',
+            'cargo' => 'sometimes|nullable|string|max:255',
+        ]);
+
+        $user = auth('api')->user();
+        $user->update($data);
+        $user->loadMissing('rol', 'institucion');
+
+        Audit::log('user.profile_updated', $user, ['fields' => array_keys($data)]);
+
+        return response()->json(['user' => $user]);
     }
 
     /**

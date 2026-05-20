@@ -87,6 +87,7 @@ Route::middleware([
             Route::post('refresh', [AuthController::class, 'refresh']);
             Route::get('me', [AuthController::class, 'me']);
             Route::put('change-password', [AuthController::class, 'changePassword']);
+            Route::put('profile', [AuthController::class, 'updateProfile']);
         });
 
         // Broadcasting auth — usado por Laravel Echo para autorizar canales privados
