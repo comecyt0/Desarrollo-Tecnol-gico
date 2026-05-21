@@ -212,6 +212,14 @@ class AuthController extends Controller
      * @param  string  $token
      * @return JsonResponse
      */
+    /**
+     * Helper público para que otros controllers (SSO) emitan el mismo JWT cookie.
+     */
+    public function callRespondWithToken($token)
+    {
+        return $this->respondWithToken($token);
+    }
+
     protected function respondWithToken($token)
     {
         $ttlSeconds = auth()->guard('api')->factory()->getTTL() * 60;

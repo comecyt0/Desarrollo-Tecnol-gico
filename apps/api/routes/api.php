@@ -15,6 +15,7 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\Auth\RegistroAccesoController;
+use App\Http\Controllers\Auth\SsoController;
 use App\Http\Controllers\Auth\TwoFactorController;
 use App\Http\Controllers\Catalogos\CatalogoController;
 use App\Http\Controllers\Catalogos\ProgramaCatalogController;
@@ -65,6 +66,10 @@ Route::middleware([
 
         // 2FA challenge (public — segundo paso del login antes de tener JWT)
         Route::post('2fa/challenge', [AuthController::class, 'twoFactorChallenge'])->middleware('throttle:5,1');
+
+        // SSO OIDC (público — flujo authorization-code con PKCE)
+        Route::get('sso/login', [SsoController::class, 'login']);
+        Route::get('sso/callback', [SsoController::class, 'callback']);
     });
 
     // === REGISTRO / SOLICITUD DE ACCESO (public) ===
