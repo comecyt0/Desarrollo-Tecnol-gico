@@ -60,6 +60,9 @@ Route::middleware([
         // Password Reset (public — no authentication required)
         Route::post('forgot-password', [PasswordResetController::class, 'sendResetLink'])->middleware('throttle:3,1');
         Route::post('reset-password', [PasswordResetController::class, 'reset'])->middleware('throttle:5,1');
+
+        // 2FA challenge (public — segundo paso del login antes de tener JWT)
+        Route::post('2fa/challenge', [AuthController::class, 'twoFactorChallenge'])->middleware('throttle:5,1');
     });
 
     // === REGISTRO / SOLICITUD DE ACCESO (public) ===
@@ -88,6 +91,12 @@ Route::middleware([
             Route::get('me', [AuthController::class, 'me']);
             Route::put('change-password', [AuthController::class, 'changePassword']);
             Route::put('profile', [AuthController::class, 'updateProfile']);
+
+            // 2FA management (requiere sesión activa)
+            Route::post('2fa/setup', [\App\Http\Controllers\Auth\TwoFactorController::class, 'setup']);
+            Route::post('2fa/confirm', [\App\Http\Controllers\Auth\TwoFactorController::class, 'confirm']);
+            Route::post('2fa/disable', [\App\Http\Controllers\Auth\TwoFactorController::class, 'disable']);
+            Route::post('2fa/recovery-codes', [\App\Http\Controllers\Auth\TwoFactorController::class, 'regenerateRecoveryCodes']);
         });
 
         // Broadcasting auth — usado por Laravel Echo para autorizar canales privados

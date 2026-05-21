@@ -15,14 +15,16 @@ return [
     |
     */
 
-    'paths' => ['api/*', 'sanctum/csrf-cookie'],
+    'paths' => ['api/*', 'sanctum/csrf-cookie', 'broadcasting/auth'],
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => [
-        'http://localhost:3000',
-        'http://127.0.0.1:3000',
-    ],
+    // Lista explícita: 'cuando se use credentials' (cookies HttpOnly) NO se permite '*'.
+    // Se rellena desde env CORS_ALLOWED_ORIGINS (CSV) + defaults locales.
+    'allowed_origins' => array_values(array_filter(array_unique(array_merge(
+        ['http://localhost:3000', 'http://127.0.0.1:3000'],
+        array_map('trim', explode(',', (string) env('CORS_ALLOWED_ORIGINS', '')))
+    )))),
 
     'allowed_origins_patterns' => [],
 

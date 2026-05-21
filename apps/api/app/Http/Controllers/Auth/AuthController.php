@@ -3,11 +3,15 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use App\Support\Audit;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
+use PragmaRX\Google2FA\Google2FA;
 
 class AuthController extends Controller
 {
@@ -31,9 +35,86 @@ class AuthController extends Controller
             return response()->json(['error' => 'Credenciales inválidas'], 401);
         }
 
+        $user = auth()->guard('api')->user();
+
+        // Si el usuario tiene 2FA activo, NO emitimos el JWT aún:
+        // invalidamos el token recién creado y emitimos un challenge_id (UUID en cache).
+        if ($user->hasTwoFactorEnabled()) {
+            auth()->guard('api')->logout(); // invalida el token que recién emitimos
+            $challengeId = (string) Str::uuid();
+            Cache::put('2fa_challenge:'.$challengeId, $user->id, now()->addMinutes(5));
+
+            Log::channel('security')->info('Login requires 2FA', [
+                'user_id' => $user->id,
+                'ip' => $request->ip(),
+            ]);
+
+            return response()->json([
+                'requires_2fa' => true,
+                'challenge_id' => $challengeId,
+                'message' => 'Ingresa el código de tu app autenticadora.',
+            ], 200);
+        }
+
         Log::channel('security')->info('Successful login', [
-            'user_id' => auth()->guard('api')->id(),
+            'user_id' => $user->id,
             'email' => $request->email,
+            'ip' => $request->ip(),
+        ]);
+
+        return $this->respondWithToken($token);
+    }
+
+    /**
+     * POST /auth/2fa/challenge { challenge_id, code }
+     * Segunda etapa del login para usuarios con 2FA. Si el código TOTP (o un
+     * código de recuperación) es válido, se emite el JWT como en el login normal.
+     */
+    public function twoFactorChallenge(Request $request)
+    {
+        $request->validate([
+            'challenge_id' => 'required|string|uuid',
+            'code' => 'required|string|min:6|max:21',
+        ]);
+
+        $userId = Cache::pull('2fa_challenge:'.$request->challenge_id);
+        if (! $userId) {
+            return response()->json(['error' => 'Challenge expirado o inválido. Inicia sesión nuevamente.'], 422);
+        }
+
+        /** @var User|null $user */
+        $user = User::find($userId);
+        if (! $user || ! $user->hasTwoFactorEnabled()) {
+            return response()->json(['error' => 'Usuario inválido.'], 422);
+        }
+
+        $g2fa = new Google2FA;
+        $codeOk = $g2fa->verifyKey($user->two_factor_secret, $request->code);
+
+        // Fallback: ¿es uno de los recovery codes? (de un solo uso)
+        if (! $codeOk) {
+            $codes = $user->two_factor_recovery_codes ?? [];
+            if (in_array($request->code, $codes, true)) {
+                $codeOk = true;
+                $user->two_factor_recovery_codes = array_values(array_diff($codes, [$request->code]));
+                $user->save();
+                Audit::log('user.2fa_recovery_used', $user);
+            }
+        }
+
+        if (! $codeOk) {
+            Log::channel('security')->warning('2FA challenge failed', [
+                'user_id' => $user->id,
+                'ip' => $request->ip(),
+            ]);
+
+            return response()->json(['error' => 'Código inválido.'], 422);
+        }
+
+        $token = auth()->guard('api')->login($user);
+
+        Log::channel('security')->info('Successful login (2FA)', [
+            'user_id' => $user->id,
             'ip' => $request->ip(),
         ]);
 
@@ -52,6 +133,7 @@ class AuthController extends Controller
         return response()->json([
             'user' => $user,
             'expires_at' => $guard->payload()->get('exp'), // epoch seconds
+            'two_factor_enabled' => $user->hasTwoFactorEnabled(),
         ]);
     }
 
@@ -62,8 +144,11 @@ class AuthController extends Controller
     {
         auth()->guard('api')->logout();
 
-        // Limpiar cookie HttpOnly del JWT
-        $expiredCookie = cookie('comecyt_auth', '', -1, '/', null, false, true, false, 'Strict');
+        // Limpiar cookie HttpOnly del JWT — debe usar el mismo dominio/secure/samesite que respondWithToken
+        $cookieDomain = env('COOKIE_DOMAIN');
+        $isSecure = filter_var(env('COOKIE_SECURE', app()->environment('production')), FILTER_VALIDATE_BOOLEAN);
+        $sameSite = (string) env('COOKIE_SAME_SITE', 'Strict');
+        $expiredCookie = cookie('comecyt_auth', '', -1, '/', $cookieDomain, $isSecure, true, false, $sameSite);
 
         return response()->json(['message' => 'Sesión cerrada exitosamente'])
             ->withCookie($expiredCookie);
@@ -130,19 +215,24 @@ class AuthController extends Controller
     protected function respondWithToken($token)
     {
         $ttlSeconds = auth()->guard('api')->factory()->getTTL() * 60;
-        $isSecure = app()->environment('production');
 
-        // Cookie HttpOnly — invisible a JavaScript, protegida contra XSS
+        // Cookie HttpOnly — invisible a JavaScript, protegida contra XSS.
+        // En producción: COOKIE_SECURE=true, COOKIE_DOMAIN=.dominio.edomex.gob.mx, COOKIE_SAME_SITE=Strict.
+        // En local dev sin HTTPS, COOKIE_SECURE=false para que el browser acepte la cookie.
+        $cookieDomain = env('COOKIE_DOMAIN'); // null en dev
+        $isSecure = filter_var(env('COOKIE_SECURE', app()->environment('production')), FILTER_VALIDATE_BOOLEAN);
+        $sameSite = (string) env('COOKIE_SAME_SITE', 'Strict');
+
         $cookie = cookie(
-            'comecyt_auth',    // nombre
-            $token,            // valor
-            $ttlSeconds / 60,  // minutos
-            '/',               // path
-            null,              // domain
-            $isSecure,         // secure (solo HTTPS en producción)
-            true,              // httpOnly
-            false,             // raw
-            'Strict'           // sameSite
+            'comecyt_auth',     // nombre
+            $token,             // valor
+            $ttlSeconds / 60,   // minutos
+            '/',                // path
+            $cookieDomain,      // domain (null = host actual)
+            $isSecure,          // secure
+            true,               // httpOnly
+            false,              // raw
+            $sameSite           // sameSite
         );
 
         $body = [

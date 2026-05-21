@@ -29,6 +29,8 @@ class User extends Authenticatable implements JWTSubject
     protected $hidden = [
         'password',
         'remember_token',
+        'two_factor_secret',
+        'two_factor_recovery_codes',
     ];
 
     protected function casts(): array
@@ -38,7 +40,17 @@ class User extends Authenticatable implements JWTSubject
             'password' => 'hashed',
             'activo' => 'boolean',
             'ultimo_acceso' => 'datetime',
+            'two_factor_confirmed_at' => 'datetime',
+            // Secret y recovery codes se guardan encriptados en DB
+            'two_factor_secret' => 'encrypted',
+            'two_factor_recovery_codes' => 'encrypted:array',
         ];
+    }
+
+    /** Helper: ¿el usuario tiene 2FA activo? */
+    public function hasTwoFactorEnabled(): bool
+    {
+        return ! is_null($this->two_factor_confirmed_at) && ! is_null($this->two_factor_secret);
     }
 
     public function rol()
