@@ -26,7 +26,11 @@ return [
         array_map('trim', explode(',', (string) env('CORS_ALLOWED_ORIGINS', '')))
     )))),
 
-    'allowed_origins_patterns' => [],
+    // En dev local también aceptamos puertos arbitrarios y localhost vs 127.0.0.1.
+    // En producción setea CORS_ALLOWED_ORIGINS al dominio real y este patrón no aplica.
+    'allowed_origins_patterns' => env('APP_ENV', 'production') === 'local'
+        ? ['#^http://(localhost|127\.0\.0\.1)(:\d+)?$#']
+        : [],
 
     'allowed_headers' => ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With'],
 
