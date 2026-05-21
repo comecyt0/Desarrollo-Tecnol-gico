@@ -84,8 +84,38 @@
         </tr>
     </table>
 
+    @if(isset($firma))
+    <div style="margin-top: 30px; border: 1px solid #800020; padding: 12px; background: #fdf8f9;">
+        <div style="font-weight: bold; color: #800020; font-size: 11px; margin-bottom: 6px; letter-spacing: 1px;">
+            SELLO DIGITAL DEL DOCUMENTO
+        </div>
+        <table style="font-size: 9px; font-family: monospace; width: 100%;">
+            <tr>
+                <th style="width: 25%; text-align: left; padding: 2px 4px;">Hash SHA-256:</th>
+                <td style="padding: 2px 4px; word-break: break-all;">{{ $firma['hash'] }}</td>
+            </tr>
+            <tr>
+                <th style="text-align: left; padding: 2px 4px;">Timestamp UTC:</th>
+                <td style="padding: 2px 4px;">{{ $firma['timestamp'] }}</td>
+            </tr>
+            <tr>
+                <th style="text-align: left; padding: 2px 4px;">Cadena de evidencia:</th>
+                <td style="padding: 2px 4px; word-break: break-all;">{{ $firma['sello_evidencia'] }}</td>
+            </tr>
+            <tr>
+                <th style="text-align: left; padding: 2px 4px;">Emisor:</th>
+                <td style="padding: 2px 4px;">{{ $firma['emisor'] }}</td>
+            </tr>
+        </table>
+        <p style="font-size: 8.5px; color: #666; margin-top: 6px;">
+            Sello criptográfico de integridad. Registro de no-repudio en bitácora bajo el código
+            <strong>document.signed.convenio</strong>.
+        </p>
+    </div>
+    @endif
+
     <div class="footer">
-        Documento generado electrónicamente el {{ date('d') }} de {{ date('F') }} de {{ date('Y') }}, 
+        Documento generado electrónicamente el {{ date('d') }} de {{ date('F') }} de {{ date('Y') }},
         Toluca, Estado de México. | Sistema COMECYT — Folio {{ $solicitud->folio }}
     </div>
 </body>

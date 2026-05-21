@@ -94,9 +94,45 @@
         </div>
     </div>
 
+    <div class="section" style="margin-top: 40px; border: 1px solid #800020; padding: 12px; background: #fdf8f9;">
+        <div style="font-weight: bold; color: #800020; font-size: 11px; margin-bottom: 6px; letter-spacing: 1px;">
+            SELLO DIGITAL DEL DOCUMENTO
+        </div>
+        <table style="font-size: 9px; font-family: monospace;">
+            <tr>
+                <th style="width: 22%; background: transparent; border: none; padding: 2px 4px;">Hash SHA-256:</th>
+                <td style="border: none; padding: 2px 4px; word-break: break-all;">{{ $firma['hash'] ?? '—' }}</td>
+            </tr>
+            <tr>
+                <th style="background: transparent; border: none; padding: 2px 4px;">Algoritmo:</th>
+                <td style="border: none; padding: 2px 4px;">{{ $firma['algoritmo'] ?? 'SHA-256' }}</td>
+            </tr>
+            <tr>
+                <th style="background: transparent; border: none; padding: 2px 4px;">Timestamp UTC:</th>
+                <td style="border: none; padding: 2px 4px;">{{ $firma['timestamp'] ?? now()->utc()->toIso8601String() }}</td>
+            </tr>
+            <tr>
+                <th style="background: transparent; border: none; padding: 2px 4px;">Cadena de evidencia:</th>
+                <td style="border: none; padding: 2px 4px; word-break: break-all;">{{ $firma['sello_evidencia'] ?? '—' }}</td>
+            </tr>
+            <tr>
+                <th style="background: transparent; border: none; padding: 2px 4px;">Emisor:</th>
+                <td style="border: none; padding: 2px 4px;">{{ $firma['emisor'] ?? 'COMECYT' }}</td>
+            </tr>
+            <tr>
+                <th style="background: transparent; border: none; padding: 2px 4px;">Evaluador:</th>
+                <td style="border: none; padding: 2px 4px;">{{ $dictamen->asignacion->evaluador->name ?? '—' }}</td>
+            </tr>
+        </table>
+        <p style="font-size: 8.5px; color: #666; margin-top: 8px; text-align: justify;">
+            Este sello criptográfico permite verificar la integridad del documento. Cualquier alteración del
+            contenido invalida el hash. El registro en la bitácora de auditoría del sistema COMECYT bajo el
+            código <strong>document.signed.dictamen</strong> sirve como evidencia de no-repudio.
+        </p>
+    </div>
+
     <div class="footer">
-        Este documento es un comprobante oficial de evaluación emitido por el Sistema COMECYT.<br>
-        Fecha de emisión: {{ date('d/m/Y H:i') }}
+        Comprobante oficial de evaluación · Sistema COMECYT · Fecha de emisión: {{ date('d/m/Y H:i') }}
     </div>
 </body>
 </html>

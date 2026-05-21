@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Exports\SolicitudesExport;
 use App\Models\Dictamen;
 use App\Models\Solicitud;
+use App\Support\DocumentSignature;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
@@ -31,9 +32,21 @@ class DocumentoController extends Controller
             return response()->json(['error' => 'No autorizado'], 403);
         }
 
-        $dictamen->load(['asignacion.solicitud.institucion', 'asignacion.solicitud.convocatoria']);
+        $dictamen->load(['asignacion.solicitud.institucion', 'asignacion.solicitud.convocatoria', 'asignacion.evaluador']);
 
-        $pdf = Pdf::loadView('pdfs.dictamen', compact('dictamen'));
+        // Generamos el contenido base SIN sello para hashearlo
+        $contentForHash = json_encode([
+            'dictamen_id' => $dictamen->id,
+            'puntaje_total' => $dictamen->puntaje_total,
+            'sujeto_apoyo' => (bool) $dictamen->sujeto_apoyo,
+            'evaluador_id' => $dictamen->asignacion->evaluador_id,
+            'solicitud_folio' => $dictamen->asignacion->solicitud->folio,
+            'comentarios' => $dictamen->comentarios_justificacion,
+        ], JSON_UNESCAPED_UNICODE);
+
+        $firma = DocumentSignature::sign($contentForHash, 'dictamen', $dictamen->id);
+
+        $pdf = Pdf::loadView('pdfs.dictamen', compact('dictamen', 'firma'));
 
         return $pdf->download("Dictamen_{$dictamen->asignacion->solicitud->folio}.pdf");
     }
@@ -51,13 +64,25 @@ class DocumentoController extends Controller
             return response()->json(['error' => 'No autorizado'], 403);
         }
 
-        $solicitud->load(['user', 'institucion', 'convocatoria']);
+        $solicitud->load(['user', 'institucion', 'convocatoria', 'convenio']);
 
         if ($solicitud->estado !== 'aprobada' && $solicitud->estado !== 'convenio') {
             return response()->json(['error' => 'La solicitud debe estar aprobada para generar el convenio.'], 403);
         }
 
-        $pdf = Pdf::loadView('pdfs.convenio', compact('solicitud'));
+        $contentForHash = json_encode([
+            'solicitud_id' => $solicitud->id,
+            'folio' => $solicitud->folio,
+            'titulo' => $solicitud->titulo_proyecto,
+            'institucion' => $solicitud->institucion?->nombre,
+            'monto_solicitado' => $solicitud->monto_solicitado,
+            'monto_aprobado' => $solicitud->convenio?->monto_aprobado,
+            'numero_convenio' => $solicitud->convenio?->numero_convenio,
+        ], JSON_UNESCAPED_UNICODE);
+
+        $firma = DocumentSignature::sign($contentForHash, 'convenio', $solicitud->id);
+
+        $pdf = Pdf::loadView('pdfs.convenio', compact('solicitud', 'firma'));
 
         return $pdf->download("Convenio_{$solicitud->folio}.pdf");
     }

@@ -15,6 +15,7 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\Auth\RegistroAccesoController;
+use App\Http\Controllers\Auth\TwoFactorController;
 use App\Http\Controllers\Catalogos\CatalogoController;
 use App\Http\Controllers\Catalogos\ProgramaCatalogController;
 use App\Http\Controllers\Convocatorias\ConvocatoriaController;
@@ -27,6 +28,7 @@ use App\Http\Controllers\InstitucionController;
 use App\Http\Controllers\ListaNegraController;
 use App\Http\Controllers\MinistracionController;
 use App\Http\Controllers\NotificacionLogController;
+use App\Http\Controllers\PushController;
 use App\Http\Controllers\Solicitudes\RevisionController;
 use App\Http\Controllers\Solicitudes\SolicitudController;
 use App\Http\Controllers\UserPreferenceController;
@@ -93,10 +95,10 @@ Route::middleware([
             Route::put('profile', [AuthController::class, 'updateProfile']);
 
             // 2FA management (requiere sesión activa)
-            Route::post('2fa/setup', [\App\Http\Controllers\Auth\TwoFactorController::class, 'setup']);
-            Route::post('2fa/confirm', [\App\Http\Controllers\Auth\TwoFactorController::class, 'confirm']);
-            Route::post('2fa/disable', [\App\Http\Controllers\Auth\TwoFactorController::class, 'disable']);
-            Route::post('2fa/recovery-codes', [\App\Http\Controllers\Auth\TwoFactorController::class, 'regenerateRecoveryCodes']);
+            Route::post('2fa/setup', [TwoFactorController::class, 'setup']);
+            Route::post('2fa/confirm', [TwoFactorController::class, 'confirm']);
+            Route::post('2fa/disable', [TwoFactorController::class, 'disable']);
+            Route::post('2fa/recovery-codes', [TwoFactorController::class, 'regenerateRecoveryCodes']);
         });
 
         // Broadcasting auth — usado por Laravel Echo para autorizar canales privados
@@ -236,6 +238,11 @@ Route::middleware([
         Route::get('mis-preferencias', [UserPreferenceController::class, 'index']);
         Route::post('mis-preferencias', [UserPreferenceController::class, 'store']);
         Route::delete('mis-preferencias/{preferencia}', [UserPreferenceController::class, 'destroy']);
+
+        // PUSH NOTIFICATIONS (Web Push estándar; sending requiere minishlink/web-push)
+        Route::get('push/vapid-public-key', [PushController::class, 'vapidPublicKey']);
+        Route::post('push/subscribe', [PushController::class, 'subscribe']);
+        Route::post('push/unsubscribe', [PushController::class, 'unsubscribe']);
 
         // CATALOGOS GENERALES (Todos los autenticados)
         Route::get('catalogos', [CatalogoController::class, 'index']);
