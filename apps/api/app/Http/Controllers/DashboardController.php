@@ -373,7 +373,7 @@ class DashboardController extends Controller
         $instituciones = Institucion::where('nombre', $like, $needle)
             ->orderBy('nombre')
             ->limit($limit)
-            ->get(['id', 'nombre', 'clave']);
+            ->get(['id', 'nombre', 'acronimo']);
 
         return response()->json([
             'solicitudes' => $solicitudes,
