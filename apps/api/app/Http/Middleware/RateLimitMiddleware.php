@@ -10,12 +10,17 @@ use Symfony\Component\HttpFoundation\Response;
 /**
  * RateLimitMiddleware
  *
- * Aplica un límite de 100 peticiones por minuto por IP.
- * Responde con HTTP 429 si se excede el límite.
+ * Aplica un límite global de peticiones por IP. Default: 300/min.
+ * 100/min era muy bajo para una SPA admin que dispara ~15-20 requests por
+ * página (stats, charts, notificaciones, etc.) — un usuario navegando
+ * normalmente disparaba 429 después de 5-6 clicks.
+ *
+ * Override con RATE_LIMIT_MAX en .env. Para auth/login hay un middleware
+ * dedicado más estricto (AuthLoginRateLimitMiddleware).
  */
 class RateLimitMiddleware
 {
-    private const MAX_REQUESTS = 100;
+    private const MAX_REQUESTS = 300;
 
     private const WINDOW_SECONDS = 60;
 
