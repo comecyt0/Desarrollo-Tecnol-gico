@@ -64,7 +64,7 @@ class DocumentoController extends Controller
             return response()->json(['error' => 'No autorizado'], 403);
         }
 
-        $solicitud->load(['user', 'institucion', 'convocatoria', 'convenio']);
+        $solicitud->load(['user', 'empresa', 'convocatoria', 'convenio']);
 
         if ($solicitud->estado !== 'aprobada' && $solicitud->estado !== 'convenio') {
             return response()->json(['error' => 'La solicitud debe estar aprobada para generar el convenio.'], 403);
@@ -74,7 +74,7 @@ class DocumentoController extends Controller
             'solicitud_id' => $solicitud->id,
             'folio' => $solicitud->folio,
             'titulo' => $solicitud->titulo_proyecto,
-            'institucion' => $solicitud->institucion?->nombre,
+            'empresa' => $solicitud->empresa?->nombre,
             'monto_solicitado' => $solicitud->monto_solicitado,
             'monto_aprobado' => $solicitud->convenio?->monto_aprobado,
             'numero_convenio' => $solicitud->convenio?->numero_convenio,

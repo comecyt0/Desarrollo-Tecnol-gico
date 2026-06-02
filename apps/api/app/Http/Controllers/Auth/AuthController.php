@@ -128,7 +128,7 @@ class AuthController extends Controller
     {
         $guard = auth()->guard('api');
         $user = $guard->user();
-        $user->loadMissing('rol', 'institucion');
+        $user->loadMissing('rol', 'empresa');
 
         return response()->json([
             'user' => $user,
@@ -194,14 +194,14 @@ class AuthController extends Controller
     {
         $data = $request->validate([
             'name' => 'sometimes|string|max:255',
-            'institucion_id' => 'sometimes|nullable|exists:instituciones,id',
+            'empresa_id' => 'sometimes|nullable|exists:instituciones,id',
             'telefono' => 'sometimes|nullable|string|max:20',
             'cargo' => 'sometimes|nullable|string|max:255',
         ]);
 
         $user = auth('api')->user();
         $user->update($data);
-        $user->loadMissing('rol', 'institucion');
+        $user->loadMissing('rol', 'empresa');
 
         Audit::log('user.profile_updated', $user, ['fields' => array_keys($data)]);
 
@@ -247,7 +247,7 @@ class AuthController extends Controller
             'token_type' => 'bearer',
             'expires_in' => $ttlSeconds,
             'expires_at' => time() + $ttlSeconds, // epoch seconds — usado por frontend para refresh proactivo
-            'user' => auth()->guard('api')->user()->load('rol', 'institucion'),
+            'user' => auth()->guard('api')->user()->load('rol', 'empresa'),
         ];
 
         // Token en body solo en entorno local/dev — en producción solo viaja via cookie HttpOnly

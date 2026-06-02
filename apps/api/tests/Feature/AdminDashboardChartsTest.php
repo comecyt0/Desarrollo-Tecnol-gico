@@ -4,7 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Convenio;
 use App\Models\Convocatoria;
-use App\Models\Institucion;
+use App\Models\Empresa;
 use App\Models\Rol;
 use App\Models\Solicitud;
 use App\Models\TipoPrograma;
@@ -55,17 +55,17 @@ class AdminDashboardChartsTest extends TestCase
     {
         $tipoPrograma = TipoPrograma::factory()->create();
         $convocatoria = Convocatoria::factory()->create(['tipo_programa_id' => $tipoPrograma->id]);
-        $institucion = Institucion::factory()->create();
+        $empresa = Empresa::factory()->create();
         $user = User::factory()->create([
             'rol_id' => 4,
-            'institucion_id' => $institucion->id,
+            'empresa_id' => $empresa->id,
         ]);
 
         // 2 solicitudes este mes, una aprobada con convenio
         $s1 = Solicitud::create([
             'folio' => 'TEST-A',
             'user_id' => $user->id,
-            'institucion_id' => $institucion->id,
+            'empresa_id' => $empresa->id,
             'convocatoria_id' => $convocatoria->id,
             'titulo_proyecto' => 'A',
             'descripcion_proyecto' => 'desc',
@@ -75,7 +75,7 @@ class AdminDashboardChartsTest extends TestCase
         Solicitud::create([
             'folio' => 'TEST-B',
             'user_id' => $user->id,
-            'institucion_id' => $institucion->id,
+            'empresa_id' => $empresa->id,
             'convocatoria_id' => $convocatoria->id,
             'titulo_proyecto' => 'B',
             'descripcion_proyecto' => 'desc',

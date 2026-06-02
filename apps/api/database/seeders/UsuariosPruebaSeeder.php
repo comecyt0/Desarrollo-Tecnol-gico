@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Models\Institucion;
+use App\Models\Empresa;
 use App\Models\Rol;
 use App\Models\User;
 use Illuminate\Database\Seeder;
@@ -20,7 +20,7 @@ class UsuariosPruebaSeeder extends Seeder
      */
     public function run(): void
     {
-        $comecyt = Institucion::where('acronimo', 'COMECYT')->first();
+        $comecyt = Empresa::where('acronimo', 'COMECYT')->first();
         $revisorRol = Rol::where('slug', 'revisor')->first();
         $evaluadorRol = Rol::where('slug', 'evaluador')->first();
         $solicitanteRol = Rol::where('slug', 'solicitante')->first();
@@ -32,7 +32,7 @@ class UsuariosPruebaSeeder extends Seeder
                 'name' => 'Revisor COMECYT',
                 'password' => Hash::make('password123'),
                 'rol_id' => $revisorRol->id,
-                'institucion_id' => $comecyt->id,
+                'empresa_id' => $comecyt->id,
                 'cargo' => 'Revisor Documental',
                 'telefono' => '7221234568',
                 'email_verified_at' => now(),
@@ -44,7 +44,7 @@ class UsuariosPruebaSeeder extends Seeder
         $revisor->save();
 
         // Usuario Evaluador Técnico
-        $uaemex = Institucion::firstOrCreate(
+        $uaemex = Empresa::firstOrCreate(
             ['acronimo' => 'UAEMEX'],
             [
                 'nombre' => 'Universidad Autónoma del Estado de México',
@@ -61,7 +61,7 @@ class UsuariosPruebaSeeder extends Seeder
                 'name' => 'Evaluador UAEMEX',
                 'password' => Hash::make('password123'),
                 'rol_id' => $evaluadorRol->id,
-                'institucion_id' => $uaemex->id,
+                'empresa_id' => $uaemex->id,
                 'cargo' => 'Evaluador Técnico',
                 'telefono' => '7221234569',
                 'email_verified_at' => now(),
@@ -79,7 +79,7 @@ class UsuariosPruebaSeeder extends Seeder
                 'name' => 'Investigador Ejemplo',
                 'password' => Hash::make('password123'),
                 'rol_id' => $solicitanteRol->id,
-                'institucion_id' => $uaemex->id,
+                'empresa_id' => $uaemex->id,
                 'cargo' => 'Investigador',
                 'telefono' => '7221234570',
                 'email_verified_at' => now(),

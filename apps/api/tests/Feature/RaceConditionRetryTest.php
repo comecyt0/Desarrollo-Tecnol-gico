@@ -4,7 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Convenio;
 use App\Models\Convocatoria;
-use App\Models\Institucion;
+use App\Models\Empresa;
 use App\Models\Rol;
 use App\Models\Solicitud;
 use App\Models\TipoPrograma;
@@ -22,8 +22,8 @@ class RaceConditionRetryTest extends TestCase
     public function test_folio_duplicado_dispara_retry_y_crea_solicitud_con_otro_folio(): void
     {
         $rolSol = Rol::updateOrCreate(['id' => 4], ['nombre' => 'Solicitante', 'slug' => 'solicitante']);
-        $institucion = Institucion::factory()->create();
-        $user = User::factory()->create(['rol_id' => 4, 'institucion_id' => $institucion->id]);
+        $empresa = Empresa::factory()->create();
+        $user = User::factory()->create(['rol_id' => 4, 'empresa_id' => $empresa->id]);
         $tp = TipoPrograma::factory()->create();
         $conv = Convocatoria::factory()->create([
             'tipo_programa_id' => $tp->id,
@@ -58,8 +58,8 @@ class RaceConditionRetryTest extends TestCase
         Rol::updateOrCreate(['id' => 1], ['nombre' => 'Admin', 'slug' => 'admin']);
         Rol::updateOrCreate(['id' => 4], ['nombre' => 'Solicitante', 'slug' => 'solicitante']);
         $admin = User::factory()->create(['rol_id' => 1]);
-        $institucion = Institucion::factory()->create();
-        $sol1User = User::factory()->create(['rol_id' => 4, 'institucion_id' => $institucion->id]);
+        $empresa = Empresa::factory()->create();
+        $sol1User = User::factory()->create(['rol_id' => 4, 'empresa_id' => $empresa->id]);
         $tp = TipoPrograma::factory()->create();
         $conv = Convocatoria::factory()->create(['tipo_programa_id' => $tp->id]);
 
@@ -69,7 +69,7 @@ class RaceConditionRetryTest extends TestCase
             $s = Solicitud::create([
                 'folio' => "TEST-{$i}",
                 'user_id' => $sol1User->id,
-                'institucion_id' => $institucion->id,
+                'empresa_id' => $empresa->id,
                 'convocatoria_id' => $conv->id,
                 'titulo_proyecto' => "P{$i}",
                 'descripcion_proyecto' => 'desc',
@@ -103,15 +103,15 @@ class RaceConditionRetryTest extends TestCase
         // Como SQLite :memory: no soporta verdadero locking concurrente, este test verifica
         // la lógica funcional: firstOrCreate(numero_tranche=1) más unique constraint.
         Rol::updateOrCreate(['id' => 4], ['nombre' => 'Solicitante', 'slug' => 'solicitante']);
-        $institucion = Institucion::factory()->create();
-        $user = User::factory()->create(['rol_id' => 4, 'institucion_id' => $institucion->id]);
+        $empresa = Empresa::factory()->create();
+        $user = User::factory()->create(['rol_id' => 4, 'empresa_id' => $empresa->id]);
         $tp = TipoPrograma::factory()->create();
         $conv = Convocatoria::factory()->create(['tipo_programa_id' => $tp->id]);
 
         $solicitud = Solicitud::create([
             'folio' => 'LOCK-1',
             'user_id' => $user->id,
-            'institucion_id' => $institucion->id,
+            'empresa_id' => $empresa->id,
             'convocatoria_id' => $conv->id,
             'titulo_proyecto' => 'p',
             'descripcion_proyecto' => 'd',

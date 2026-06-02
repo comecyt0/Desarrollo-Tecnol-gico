@@ -51,8 +51,8 @@ class PagoLiberado extends Notification implements ShouldQueue
                 'total_tranches' => $this->ministracion->convenio->ministraciones()->count(),
                 'fecha_liberacion' => $this->ministracion->fecha_autorizacion ?? now(),
                 'banco_nombre' => 'Sistema Bancario COMECYT',
-                'numero_cuenta' => $notifiable->institucion?->numero_cuenta ?? 'No disponible',
-                'titular_cuenta' => $notifiable->institucion?->nombre ?? 'Tu Institución',
+                'numero_cuenta' => $notifiable->empresa?->numero_cuenta ?? 'No disponible',
+                'titular_cuenta' => $notifiable->empresa?->nombre ?? 'Tu Institución',
                 'solicitud_id' => $this->solicitud->id,
                 'app_url' => env('NEXT_PUBLIC_APP_URL', 'http://localhost:3000'),
             ]);

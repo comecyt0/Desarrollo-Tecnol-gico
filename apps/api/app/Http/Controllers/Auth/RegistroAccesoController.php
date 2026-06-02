@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Mail\AccesoRechazadoMail;
-use App\Models\Institucion;
+use App\Models\Empresa;
 use App\Models\SolicitudAcceso;
 use App\Models\User;
 use App\Notifications\AccesoAprobado;
@@ -42,7 +42,7 @@ class RegistroAccesoController extends Controller
             'nombre' => $request->nombre,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'institucion_nombre' => $request->institucion_nombre,
+            'institucion_nombre' => $request->empresa_nombre,
             'cargo' => $request->cargo,
             'telefono' => $request->telefono,
             'motivo' => $request->motivo,
@@ -86,9 +86,9 @@ class RegistroAccesoController extends Controller
 
         DB::transaction(function () use ($solicitudAcceso) {
             // Find or create institution
-            $institucion = Institucion::firstOrCreate(
-                ['nombre' => $solicitudAcceso->institucion_nombre],
-                ['nombre' => $solicitudAcceso->institucion_nombre]
+            $empresa = Empresa::firstOrCreate(
+                ['nombre' => $solicitudAcceso->empresa_nombre],
+                ['nombre' => $solicitudAcceso->empresa_nombre]
             );
 
             // Create the user account (rol_id=4 = solicitante)
@@ -97,7 +97,7 @@ class RegistroAccesoController extends Controller
                 'email' => $solicitudAcceso->email,
                 'password' => $solicitudAcceso->password, // already hashed
                 'rol_id' => config('comecyt.roles.solicitante'),
-                'institucion_id' => $institucion->id,
+                'empresa_id' => $empresa->id,
                 'activo' => true,
                 'cargo' => $solicitudAcceso->cargo,
                 'telefono' => $solicitudAcceso->telefono,

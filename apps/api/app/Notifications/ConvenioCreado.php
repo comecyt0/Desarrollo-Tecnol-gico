@@ -52,7 +52,7 @@ class ConvenioCreado extends Notification implements ShouldQueue
                 'fecha_generacion' => $this->convenio->created_at,
                 'fecha_inicio' => $this->convenio->fecha_inicio,
                 'fecha_termino' => $this->convenio->fecha_termino,
-                'institucion_nombre' => $this->solicitud->institucion->nombre ?? 'Tu Institución',
+                'institucion_nombre' => $this->solicitud->empresa->nombre ?? 'Tu Institución',
                 'solicitud_id' => $this->solicitud->id,
                 'app_url' => env('NEXT_PUBLIC_APP_URL', 'http://localhost:3000'),
             ]);

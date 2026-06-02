@@ -19,7 +19,7 @@ class RevisionController extends Controller
      */
     public function pendientes()
     {
-        $solicitudes = Solicitud::with(['user', 'institucion', 'convocatoria', 'areaConocimiento'])
+        $solicitudes = Solicitud::with(['user', 'empresa', 'convocatoria', 'areaConocimiento'])
             ->whereIn('estado', ['enviada', 'observada'])
             ->orderBy('updated_at', 'asc')
             ->get();
@@ -32,7 +32,7 @@ class RevisionController extends Controller
      */
     public function completadas()
     {
-        $solicitudes = Solicitud::with(['user', 'institucion', 'convocatoria'])
+        $solicitudes = Solicitud::with(['user', 'empresa', 'convocatoria'])
             ->whereIn('estado', ['en_evaluacion', 'aprobada', 'rechazada', 'convenio', 'ministracion', 'cerrada'])
             ->orderBy('updated_at', 'desc')
             ->get();
@@ -45,7 +45,7 @@ class RevisionController extends Controller
      */
     public function observadas()
     {
-        $solicitudes = Solicitud::with(['user', 'institucion', 'convocatoria'])
+        $solicitudes = Solicitud::with(['user', 'empresa', 'convocatoria'])
             ->where('estado', 'observada')
             ->orderBy('updated_at', 'asc')
             ->get();
@@ -58,7 +58,7 @@ class RevisionController extends Controller
      */
     public function show(Solicitud $solicitud)
     {
-        $solicitud->load(['user', 'institucion', 'convocatoria', 'areaConocimiento', 'observaciones', 'documentos', 'asignaciones.dictamen', 'ministracion.banco']);
+        $solicitud->load(['user', 'empresa', 'convocatoria', 'areaConocimiento', 'observaciones', 'documentos', 'asignaciones.dictamen', 'ministracion.banco']);
 
         return response()->json($solicitud);
     }

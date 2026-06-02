@@ -4,7 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\AuditLog;
 use App\Models\Convocatoria;
-use App\Models\Institucion;
+use App\Models\Empresa;
 use App\Models\Rol;
 use App\Models\Solicitud;
 use App\Models\TipoPrograma;
@@ -23,15 +23,15 @@ class AuditLogTest extends TestCase
         Rol::updateOrCreate(['id' => 4], ['nombre' => 'Solicitante', 'slug' => 'solicitante']);
 
         $revisor = User::factory()->create(['rol_id' => 2]);
-        $institucion = Institucion::factory()->create();
-        $solicitante = User::factory()->create(['rol_id' => 4, 'institucion_id' => $institucion->id]);
+        $empresa = Empresa::factory()->create();
+        $solicitante = User::factory()->create(['rol_id' => 4, 'empresa_id' => $empresa->id]);
         $tp = TipoPrograma::factory()->create();
         $conv = Convocatoria::factory()->create(['tipo_programa_id' => $tp->id]);
 
         $solicitud = Solicitud::create([
             'folio' => 'AUDIT-1',
             'user_id' => $solicitante->id,
-            'institucion_id' => $institucion->id,
+            'empresa_id' => $empresa->id,
             'convocatoria_id' => $conv->id,
             'titulo_proyecto' => 'Proyecto audit',
             'descripcion_proyecto' => 'desc',

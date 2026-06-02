@@ -4,7 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\AreaConocimiento;
 use App\Models\Convocatoria;
-use App\Models\Institucion;
+use App\Models\Empresa;
 use App\Models\Rol;
 use App\Models\SolicitudRubroPresupuesto;
 use App\Models\TipoPrograma;
@@ -29,7 +29,7 @@ class IntegrationE2ETest extends TestCase
 
     protected string $token;
 
-    protected Institucion $institucion;
+    protected Institucion $empresa;
 
     protected TipoPrograma $programa;
 
@@ -43,10 +43,10 @@ class IntegrationE2ETest extends TestCase
         $this->rolSolicitante = Rol::create(['nombre' => 'Solicitante', 'slug' => 'solicitante']);
         AreaConocimiento::create(['nombre' => 'Ingeniería', 'activo' => true]);
 
-        $this->institucion = Institucion::factory()->create();
+        $this->empresa = Empresa::factory()->create();
         $this->user = User::factory()->create([
             'rol_id' => $this->rolSolicitante->id,
-            'institucion_id' => $this->institucion->id,
+            'empresa_id' => $this->empresa->id,
         ]);
         $this->token = JWTAuth::fromUser($this->user);
 

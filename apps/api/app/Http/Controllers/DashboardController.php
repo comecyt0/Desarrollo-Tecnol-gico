@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\AsignacionEvaluador;
 use App\Models\Convocatoria;
 use App\Models\Informe;
-use App\Models\Institucion;
+use App\Models\Empresa;
 use App\Models\Ministracion;
 use App\Models\Solicitud;
 use App\Models\User;
@@ -326,7 +326,7 @@ class DashboardController extends Controller
             return response()->json([
                 'solicitudes' => [],
                 'usuarios' => [],
-                'instituciones' => [],
+                'empresas' => [],
             ]);
         }
 
@@ -355,7 +355,7 @@ class DashboardController extends Controller
         $solicitudes = $solQuery
             ->orderByDesc('created_at')
             ->limit($limit)
-            ->get(['id', 'folio', 'titulo_proyecto', 'estado', 'institucion_id']);
+            ->get(['id', 'folio', 'titulo_proyecto', 'estado', 'empresa_id']);
 
         // Usuarios e instituciones sólo para admin
         $usuarios = collect();
@@ -370,7 +370,7 @@ class DashboardController extends Controller
                 ->get(['id', 'name', 'email', 'rol_id', 'activo']);
         }
 
-        $instituciones = Institucion::where('nombre', $like, $needle)
+        $empresas = Empresa::where('nombre', $like, $needle)
             ->orderBy('nombre')
             ->limit($limit)
             ->get(['id', 'nombre', 'acronimo']);
@@ -378,7 +378,7 @@ class DashboardController extends Controller
         return response()->json([
             'solicitudes' => $solicitudes,
             'usuarios' => $usuarios,
-            'instituciones' => $instituciones,
+            'empresas' => $empresas,
         ]);
     }
 

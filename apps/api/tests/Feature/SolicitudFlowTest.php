@@ -4,7 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\AreaConocimiento;
 use App\Models\Convocatoria;
-use App\Models\Institucion;
+use App\Models\Empresa;
 use App\Models\Rol;
 use App\Models\Solicitud;
 use App\Models\User;
@@ -41,7 +41,7 @@ class SolicitudFlowTest extends TestCase
     public function test_solicitation_creation_and_submission_flow()
     {
         // 1. Setup - Create basic institutions and areas
-        $institucion = Institucion::create([
+        $empresa = Empresa::create([
             'nombre' => 'Tecnológico de Monterrey',
             'acronimo' => 'ITESM',
             'tipo' => 'privada',
@@ -62,7 +62,7 @@ class SolicitudFlowTest extends TestCase
         // 3. Create a Solicitante User
         $user = User::factory()->create([
             'rol_id' => $this->rolSolicitante->id,
-            'institucion_id' => $institucion->id,
+            'empresa_id' => $empresa->id,
         ]);
 
         $token = JWTAuth::fromUser($user);

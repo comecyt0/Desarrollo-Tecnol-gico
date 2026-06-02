@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Convocatoria;
-use App\Models\Institucion;
+use App\Models\Empresa;
 use App\Models\Rol;
 use App\Models\Solicitud;
 use App\Models\TipoPrograma;
@@ -42,7 +42,7 @@ class AdminSearchTest extends TestCase
             ->assertExactJson([
                 'solicitudes' => [],
                 'usuarios' => [],
-                'instituciones' => [],
+                'empresas' => [],
             ]);
     }
 
@@ -50,16 +50,16 @@ class AdminSearchTest extends TestCase
     {
         $tipoPrograma = TipoPrograma::factory()->create();
         $convocatoria = Convocatoria::factory()->create(['tipo_programa_id' => $tipoPrograma->id]);
-        $institucion = Institucion::factory()->create(['nombre' => 'UAEMex Biotecnología']);
+        $empresa = Empresa::factory()->create(['nombre' => 'UAEMex Biotecnología']);
         $user = User::factory()->create([
             'rol_id' => 4,
             'email' => 'investigador@uaemex.mx',
-            'institucion_id' => $institucion->id,
+            'empresa_id' => $empresa->id,
         ]);
         $solicitud = Solicitud::create([
             'folio' => 'COMECYT-2026-XYZQAB',
             'user_id' => $user->id,
-            'institucion_id' => $institucion->id,
+            'empresa_id' => $empresa->id,
             'convocatoria_id' => $convocatoria->id,
             'titulo_proyecto' => 'Investigación de biotecnología avanzada',
             'descripcion_proyecto' => 'desc',
@@ -79,7 +79,7 @@ class AdminSearchTest extends TestCase
             ->getJson('/api/admin/search?q=biotecnolog');
         $res->assertOk();
         $this->assertCount(1, $res->json('solicitudes'));
-        $this->assertCount(1, $res->json('instituciones'));
+        $this->assertCount(1, $res->json('empresas'));
 
         // Match por email de usuario
         $res = $this->withHeaders(['Authorization' => 'Bearer '.$this->adminToken])
@@ -99,13 +99,13 @@ class AdminSearchTest extends TestCase
     {
         // 12 instituciones que matchean "Institucion Test"
         for ($i = 1; $i <= 12; $i++) {
-            Institucion::factory()->create(['nombre' => "Institucion Test {$i}"]);
+            Empresa::factory()->create(['nombre' => "Institucion Test {$i}"]);
         }
 
         $res = $this->withHeaders(['Authorization' => 'Bearer '.$this->adminToken])
             ->getJson('/api/admin/search?q=Institucion+Test');
 
         $res->assertOk();
-        $this->assertLessThanOrEqual(8, count($res->json('instituciones')));
+        $this->assertLessThanOrEqual(8, count($res->json('empresas')));
     }
 }

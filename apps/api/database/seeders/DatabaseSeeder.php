@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Models\Institucion;
+use App\Models\Empresa;
 use App\Models\Rol;
 use App\Models\User;
 use Illuminate\Database\Seeder;
@@ -26,7 +26,7 @@ class DatabaseSeeder extends Seeder
         }
 
         // 2. Institución por defecto (COMECYT)
-        $comecyt = Institucion::updateOrCreate(
+        $comecyt = Empresa::updateOrCreate(
             ['acronimo' => 'COMECYT'],
             [
                 'nombre' => 'Consejo Mexiquense de Ciencia y Tecnología',
@@ -46,7 +46,7 @@ class DatabaseSeeder extends Seeder
                 'name' => 'Super Administrador',
                 'password' => Hash::make('password123'),
                 'rol_id' => $adminRol->id,
-                'institucion_id' => $comecyt->id,
+                'empresa_id' => $comecyt->id,
                 'cargo' => 'Director',
                 'telefono' => '7221234567',
                 'email_verified_at' => now(),

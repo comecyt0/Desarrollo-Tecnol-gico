@@ -174,7 +174,7 @@ class ConvenioController extends Controller
     private function generateConvenioContent(Convenio $convenio)
     {
         $sol = $convenio->solicitud;
-        $inst = $sol->institucion;
+        $inst = $sol->empresa;
 
         $text = "ACUERDO DE ASIGNACION DE RECURSOS\n\n";
         $text .= "Número de Convenio: {$convenio->numero_convenio}\n";

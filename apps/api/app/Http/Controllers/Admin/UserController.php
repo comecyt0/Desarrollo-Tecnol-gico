@@ -15,7 +15,7 @@ class UserController extends Controller
      */
     public function index(Request $request)
     {
-        $query = User::with(['rol', 'institucion'])->orderBy('id', 'desc');
+        $query = User::with(['rol', 'empresa'])->orderBy('id', 'desc');
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -43,7 +43,7 @@ class UserController extends Controller
             'email' => 'required|string|email|max:255|unique:users',
             'password' => ['required', Password::defaults()],
             'rol_id' => 'required|exists:roles,id',
-            'institucion_id' => 'nullable|exists:instituciones,id',
+            'empresa_id' => 'nullable|exists:instituciones,id',
             'telefono' => 'nullable|string|max:20',
             'cargo' => 'nullable|string|max:255',
             'activo' => 'boolean',
@@ -55,7 +55,7 @@ class UserController extends Controller
 
         return response()->json([
             'message' => 'Usuario creado con éxito',
-            'user' => $user->load(['rol', 'institucion']),
+            'user' => $user->load(['rol', 'empresa']),
         ], 201);
     }
 
@@ -64,7 +64,7 @@ class UserController extends Controller
      */
     public function show(User $user)
     {
-        return response()->json($user->load(['rol', 'institucion']));
+        return response()->json($user->load(['rol', 'empresa']));
     }
 
     /**
@@ -77,7 +77,7 @@ class UserController extends Controller
             'email' => 'string|email|max:255|unique:users,email,'.$user->id,
             'password' => ['nullable', Password::defaults()],
             'rol_id' => 'exists:roles,id',
-            'institucion_id' => 'nullable|exists:instituciones,id',
+            'empresa_id' => 'nullable|exists:instituciones,id',
             'telefono' => 'nullable|string|max:20',
             'cargo' => 'nullable|string|max:255',
             'activo' => 'boolean',
@@ -93,7 +93,7 @@ class UserController extends Controller
 
         return response()->json([
             'message' => 'Usuario actualizado con éxito',
-            'user' => $user->load(['rol', 'institucion']),
+            'user' => $user->load(['rol', 'empresa']),
         ]);
     }
 

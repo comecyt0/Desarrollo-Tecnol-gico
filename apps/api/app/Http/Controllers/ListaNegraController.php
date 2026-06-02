@@ -9,13 +9,13 @@ class ListaNegraController extends Controller
 {
     public function index()
     {
-        return response()->json(ListaNegra::with(['institucion', 'solicitud', 'sancionador'])->orderBy('id', 'desc')->get());
+        return response()->json(ListaNegra::with(['empresa', 'solicitud', 'sancionador'])->orderBy('id', 'desc')->get());
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'institucion_id' => 'required|exists:instituciones,id',
+            'empresa_id' => 'required|exists:instituciones,id',
             'solicitud_id' => 'nullable|exists:solicitudes,id',
             'motivo' => 'required|string',
             'fecha_inicio_sancion' => 'required|date',

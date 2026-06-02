@@ -35,7 +35,7 @@ class SolicitudController extends Controller
         $user = $request->user();
 
         $solicitudes = Solicitud::where('user_id', $user->id)
-            ->with(['ministracion', 'convenio', 'institucion'])
+            ->with(['ministracion', 'convenio', 'empresa'])
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -47,7 +47,7 @@ class SolicitudController extends Controller
      */
     public function adminIndex(Request $request)
     {
-        $query = Solicitud::with(['user', 'institucion', 'convocatoria'])
+        $query = Solicitud::with(['user', 'empresa', 'convocatoria'])
             ->orderBy('created_at', 'desc');
 
         if ($request->filled('search')) {
@@ -55,7 +55,7 @@ class SolicitudController extends Controller
             $query->where(function ($q) use ($search) {
                 $q->where('folio', 'ilike', "%{$search}%")
                     ->orWhere('titulo_proyecto', 'ilike', "%{$search}%")
-                    ->orWhereHas('institucion', fn ($qi) => $qi->where('nombre', 'ilike', "%{$search}%"));
+                    ->orWhereHas('empresa', fn ($qi) => $qi->where('nombre', 'ilike', "%{$search}%"));
             });
         }
 
@@ -106,7 +106,7 @@ class SolicitudController extends Controller
         $user = $request->user();
 
         // 🔴 0. Validar que el usuario tenga una institución asignada
-        if (! $user->institucion_id) {
+        if (! $user->empresa_id) {
             return response()->json([
                 'message' => ConfigHelper::msg(Message::AUTH_NO_INSTITUTION),
                 'error' => 'sin_institucion',
@@ -114,7 +114,7 @@ class SolicitudController extends Controller
         }
 
         // 🔴 1. Validar que la institución del usuario NO esté en Lista Negra
-        $enListaNegra = ListaNegra::where('institucion_id', $user->institucion_id)
+        $enListaNegra = ListaNegra::where('empresa_id', $user->empresa_id)
             ->where('activa', true)
             ->exists();
 
@@ -147,7 +147,7 @@ class SolicitudController extends Controller
                     $solicitud = Solicitud::create([
                         'folio' => $folio,
                         'user_id' => $user->id,
-                        'institucion_id' => $user->institucion_id,
+                        'empresa_id' => $user->empresa_id,
                         'convocatoria_id' => $request->convocatoria_id,
                         'titulo_proyecto' => $request->titulo_proyecto,
                         'modalidad' => $request->modalidad,
@@ -244,7 +244,7 @@ class SolicitudController extends Controller
 
         $solicitud->load([
             'convocatoria.tipoPrograma',
-            'institucion',
+            'empresa',
             'areaConocimiento',
             'observaciones',
             'documentos',

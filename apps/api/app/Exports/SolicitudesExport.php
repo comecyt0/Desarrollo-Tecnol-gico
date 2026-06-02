@@ -15,7 +15,7 @@ class SolicitudesExport implements FromCollection, WithHeadings, WithMapping
      */
     public function collection()
     {
-        return Solicitud::with(['user', 'institucion', 'convocatoria'])->get();
+        return Solicitud::with(['user', 'empresa', 'convocatoria'])->get();
     }
 
     public function headings(): array
@@ -38,7 +38,7 @@ class SolicitudesExport implements FromCollection, WithHeadings, WithMapping
             $solicitud->folio,
             $solicitud->titulo_proyecto,
             $solicitud->user->name,
-            $solicitud->institucion->nombre ?? 'N/A',
+            $solicitud->empresa->nombre ?? 'N/A',
             $solicitud->convocatoria->nombre ?? 'N/A',
             '$'.number_format($solicitud->monto_solicitado, 2),
             strtoupper($solicitud->estado),

@@ -19,7 +19,7 @@ class User extends Authenticatable implements JWTSubject
         'email',
         'password',
         'rol_id',
-        'institucion_id',
+        'empresa_id',
         'telefono',
         'cargo',
         'activo',
@@ -58,9 +58,9 @@ class User extends Authenticatable implements JWTSubject
         return $this->belongsTo(Rol::class);
     }
 
-    public function institucion()
+    public function empresa()
     {
-        return $this->belongsTo(Institucion::class);
+        return $this->belongsTo(Empresa::class);
     }
 
     /**
@@ -76,11 +76,11 @@ class User extends Authenticatable implements JWTSubject
      */
     public function getJWTCustomClaims(): array
     {
-        $this->loadMissing('rol', 'institucion');
+        $this->loadMissing('rol', 'empresa');
 
         return [
             'rol' => $this->rol ? $this->rol->slug : null,
-            'institucion' => $this->institucion ? $this->institucion->acronimo : null,
+            'empresa' => $this->empresa ? $this->empresa->acronimo : null,
         ];
     }
 }

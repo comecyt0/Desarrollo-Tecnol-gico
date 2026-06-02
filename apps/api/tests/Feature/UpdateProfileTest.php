@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Models\Institucion;
+use App\Models\Empresa;
 use App\Models\Rol;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -16,20 +16,20 @@ class UpdateProfileTest extends TestCase
     public function test_solicitante_puede_completar_su_perfil_de_onboarding(): void
     {
         Rol::updateOrCreate(['id' => 4], ['nombre' => 'Solicitante', 'slug' => 'solicitante']);
-        $institucion = Institucion::factory()->create();
-        $user = User::factory()->create(['rol_id' => 4, 'institucion_id' => null]);
+        $empresa = Empresa::factory()->create();
+        $user = User::factory()->create(['rol_id' => 4, 'empresa_id' => null]);
         $token = JWTAuth::fromUser($user);
 
         $res = $this->withHeaders(['Authorization' => 'Bearer '.$token])
             ->putJson('/api/auth/profile', [
-                'institucion_id' => $institucion->id,
+                'empresa_id' => $empresa->id,
                 'cargo' => 'Investigadora',
                 'telefono' => '722 123 4567',
             ]);
 
         $res->assertOk();
         $user->refresh();
-        $this->assertEquals($institucion->id, $user->institucion_id);
+        $this->assertEquals($empresa->id, $user->empresa_id);
         $this->assertEquals('Investigadora', $user->cargo);
         $this->assertEquals('722 123 4567', $user->telefono);
     }
@@ -54,7 +54,7 @@ class UpdateProfileTest extends TestCase
         $this->assertEquals('Investigador', $user->cargo);
     }
 
-    public function test_institucion_id_inexistente_devuelve_422(): void
+    public function test_empresa_id_inexistente_devuelve_422(): void
     {
         Rol::updateOrCreate(['id' => 4], ['nombre' => 'Solicitante', 'slug' => 'solicitante']);
         $user = User::factory()->create(['rol_id' => 4]);
@@ -62,7 +62,7 @@ class UpdateProfileTest extends TestCase
 
         $this->withHeaders(['Authorization' => 'Bearer '.$token])
             ->putJson('/api/auth/profile', [
-                'institucion_id' => 99999,
+                'empresa_id' => 99999,
             ])
             ->assertStatus(422);
     }

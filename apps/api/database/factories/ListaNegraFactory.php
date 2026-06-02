@@ -2,7 +2,7 @@
 
 namespace Database\Factories;
 
-use App\Models\Institucion;
+use App\Models\Empresa;
 use App\Models\ListaNegra;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -16,7 +16,7 @@ class ListaNegraFactory extends Factory
     public function definition(): array
     {
         return [
-            'institucion_id' => Institucion::factory(),
+            'empresa_id' => Empresa::factory(),
             'solicitud_id' => null,
             'sancionado_por' => null,
             'motivo' => fake()->sentence(),

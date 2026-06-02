@@ -2,14 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Institucion;
+use App\Models\Empresa;
 use Illuminate\Http\Request;
 
-class InstitucionController extends Controller
+class EmpresaController extends Controller
 {
     public function index()
     {
-        return response()->json(Institucion::orderBy('nombre')->get());
+        return response()->json(Empresa::orderBy('nombre')->get());
     }
 
     public function store(Request $request)
@@ -28,20 +28,20 @@ class InstitucionController extends Controller
         }
         unset($validated['activa']);
 
-        $inst = Institucion::create($validated);
+        $inst = Empresa::create($validated);
 
-        return response()->json(['message' => 'Institución creada', 'institucion' => $inst], 201);
+        return response()->json(['message' => 'Institución creada', 'empresa' => $inst], 201);
     }
 
-    public function show(Institucion $institucion)
+    public function show(Institucion $empresa)
     {
-        return response()->json($institucion->load('municipio'));
+        return response()->json($empresa->load('municipio'));
     }
 
-    public function update(Request $request, Institucion $institucion)
+    public function update(Request $request, Institucion $empresa)
     {
         $validated = $request->validate([
-            'nombre' => 'sometimes|string|max:255|unique:instituciones,nombre,'.$institucion->id,
+            'nombre' => 'sometimes|string|max:255|unique:instituciones,nombre,'.$empresa->id,
             'acronimo' => 'nullable|string|max:20',
             'municipio_id' => 'nullable|exists:municipios,id',
             'activo' => 'boolean',
@@ -54,14 +54,14 @@ class InstitucionController extends Controller
         }
         unset($validated['activa']);
 
-        $institucion->update($validated);
+        $empresa->update($validated);
 
-        return response()->json(['message' => 'Institución actualizada', 'institucion' => $institucion]);
+        return response()->json(['message' => 'Institución actualizada', 'empresa' => $empresa]);
     }
 
-    public function destroy(Institucion $institucion)
+    public function destroy(Institucion $empresa)
     {
-        $institucion->delete();
+        $empresa->delete();
 
         return response()->json(['message' => 'Institución eliminada']);
     }

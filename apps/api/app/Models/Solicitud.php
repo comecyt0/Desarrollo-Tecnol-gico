@@ -39,7 +39,7 @@ class Solicitud extends Model
 
     public function institucion()
     {
-        return $this->belongsTo(Institucion::class);
+        return $this->belongsTo(Empresa::class);
     }
 
     public function areaConocimiento()

@@ -25,7 +25,7 @@ use App\Http\Controllers\DocumentoController;
 use App\Http\Controllers\DocumentoUploadController;
 use App\Http\Controllers\Evaluaciones\EvaluadorController;
 use App\Http\Controllers\InformeController;
-use App\Http\Controllers\InstitucionController;
+use App\Http\Controllers\EmpresaController;
 use App\Http\Controllers\ListaNegraController;
 use App\Http\Controllers\MinistracionController;
 use App\Http\Controllers\NotificacionLogController;
@@ -169,7 +169,7 @@ Route::middleware([
             Route::apiResource('convenios', ConvenioController::class);
             Route::apiResource('ministraciones', MinistracionController::class)->parameters(['ministraciones' => 'ministracion']);
             Route::apiResource('informes', InformeController::class)->parameters(['informes' => 'informe']);
-            Route::apiResource('instituciones', InstitucionController::class)->parameters(['instituciones' => 'institucion']);
+            Route::apiResource('empresas', EmpresaController::class)->parameters(['empresas' => 'empresa']);
             Route::apiResource('lista-negra', ListaNegraController::class);
             Route::apiResource('notificaciones', NotificacionLogController::class)->only(['index', 'show']);
             Route::post('notificaciones/{notificacion}/leer', [NotificacionLogController::class, 'marcarLeida']);

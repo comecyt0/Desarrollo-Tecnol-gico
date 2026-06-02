@@ -42,7 +42,7 @@ class NuevaSolicitudAcceso extends Notification implements ShouldQueue
             'solicitud_acceso_id' => $this->solicitudAcceso->id,
             'nombre' => $this->solicitudAcceso->nombre,
             'email' => $this->solicitudAcceso->email,
-            'institucion' => $this->solicitudAcceso->institucion_nombre,
+            'empresa' => $this->solicitudAcceso->empresa_nombre,
             'mensaje' => "Nueva solicitud de acceso de {$this->solicitudAcceso->nombre} ({$this->solicitudAcceso->email})",
             'url' => '/admin/solicitudes-acceso',
         ];

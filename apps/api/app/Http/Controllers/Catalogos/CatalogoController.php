@@ -15,7 +15,7 @@ class CatalogoController extends Controller
         $bancos = DB::table('bancos')->where('activo', true)->get();
         $municipios = DB::table('municipios')->where('activo', true)->get();
         $areas = DB::table('areas_conocimiento')->where('activo', true)->get();
-        $instituciones = DB::table('instituciones')->where('activo', true)->get();
+        $empresas = DB::table('empresas')->where('activo', true)->get();
         $roles = DB::table('roles')->get();
         $modalidades = DB::table('modalidades')->where('activo', true)->get();
 
@@ -23,7 +23,7 @@ class CatalogoController extends Controller
             'bancos' => $bancos,
             'municipios' => $municipios,
             'areas_conocimiento' => $areas,
-            'instituciones' => $instituciones,
+            'empresas' => $empresas,
             'modalidades' => $modalidades,
             'roles' => $roles,
         ]);

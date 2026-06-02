@@ -4,7 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\AreaConocimiento;
 use App\Models\Convocatoria;
-use App\Models\Institucion;
+use App\Models\Empresa;
 use App\Models\ListaNegra;
 use App\Models\Rol;
 use App\Models\SolicitudMiembroEquipo;
@@ -24,7 +24,7 @@ class SolicitudDinamicoTest extends TestCase
 
     protected Convocatoria $convocatoria;
 
-    protected Institucion $institucion;
+    protected Institucion $empresa;
 
     protected Rol $rolSolicitante;
 
@@ -35,11 +35,11 @@ class SolicitudDinamicoTest extends TestCase
         $this->rolSolicitante = Rol::create(['nombre' => 'Solicitante', 'slug' => 'solicitante']);
         AreaConocimiento::create(['nombre' => 'Ingeniería', 'activo' => true]);
 
-        $this->institucion = Institucion::factory()->create();
+        $this->empresa = Empresa::factory()->create();
 
         $this->user = User::factory()->create([
             'rol_id' => $this->rolSolicitante->id,
-            'institucion_id' => $this->institucion->id,
+            'empresa_id' => $this->empresa->id,
         ]);
 
         $this->convocatoria = Convocatoria::factory()->activa()->create();
@@ -166,7 +166,7 @@ class SolicitudDinamicoTest extends TestCase
     {
         $userNoInst = User::factory()->create([
             'rol_id' => 1,
-            'institucion_id' => null,
+            'empresa_id' => null,
         ]);
 
         $token = JWTAuth::fromUser($userNoInst);
@@ -181,7 +181,7 @@ class SolicitudDinamicoTest extends TestCase
     public function test_store_fails_when_institucion_is_in_lista_negra()
     {
         ListaNegra::factory()->create([
-            'institucion_id' => $this->institucion->id,
+            'empresa_id' => $this->empresa->id,
             'activa' => true,
         ]);
 
@@ -195,7 +195,7 @@ class SolicitudDinamicoTest extends TestCase
     public function test_store_allows_when_lista_negra_entry_is_inactive()
     {
         ListaNegra::factory()->inactiva()->create([
-            'institucion_id' => $this->institucion->id,
+            'empresa_id' => $this->empresa->id,
         ]);
 
         $response = $this->authed()
