@@ -32,7 +32,7 @@ class DocumentoController extends Controller
             return response()->json(['error' => 'No autorizado'], 403);
         }
 
-        $dictamen->load(['asignacion.solicitud.institucion', 'asignacion.solicitud.convocatoria', 'asignacion.evaluador']);
+        $dictamen->load(['asignacion.solicitud.empresa', 'asignacion.solicitud.convocatoria', 'asignacion.evaluador']);
 
         // Generamos el contenido base SIN sello para hashearlo
         $contentForHash = json_encode([

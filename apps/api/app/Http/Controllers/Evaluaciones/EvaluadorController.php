@@ -25,7 +25,7 @@ class EvaluadorController extends Controller
     {
         $evaluadorUser = $request->user();
 
-        $asignaciones = AsignacionEvaluador::with(['solicitud', 'solicitud.institucion'])
+        $asignaciones = AsignacionEvaluador::with(['solicitud', 'solicitud.empresa'])
             ->where('evaluador_id', $evaluadorUser->id)
             ->orderBy('estado', 'desc') // asignado, evaluando, concluido
             ->get();
@@ -44,7 +44,7 @@ class EvaluadorController extends Controller
 
         $asignacion->load([
             'solicitud',
-            'solicitud.institucion',
+            'solicitud.empresa',
             'solicitud.convocatoria',
             'solicitud.convocatoria.tipoPrograma',
             'dictamen',

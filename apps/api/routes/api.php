@@ -198,6 +198,8 @@ Route::middleware([
             Route::post('solicitudes/{solicitud}/rechazar', [SolicitudController::class, 'rechazar']);
             Route::post('solicitudes/{solicitud}/cancelar', [SolicitudController::class, 'cancelar']);
             Route::get('solicitudes', [SolicitudController::class, 'adminIndex']);
+            // Admin puede ver TODA la documentación de cualquier solicitud
+            Route::get('solicitudes/{solicitud}/full', [SolicitudController::class, 'adminShowFull']);
 
             // Solicitudes de Acceso (registro de nuevos usuarios)
             Route::get('solicitudes-acceso', [RegistroAccesoController::class, 'index']);

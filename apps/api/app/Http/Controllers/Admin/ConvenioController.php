@@ -20,7 +20,7 @@ class ConvenioController extends Controller
      */
     public function index()
     {
-        $convenios = Convenio::with('solicitud.institucion')
+        $convenios = Convenio::with('solicitud.empresa')
             ->orderBy('created_at', 'desc')
             ->paginate(20);
 
@@ -32,7 +32,7 @@ class ConvenioController extends Controller
      */
     public function show(Convenio $convenio)
     {
-        $convenio->load('solicitud.institucion', 'solicitud.convocatoria', 'ministeraciones');
+        $convenio->load('solicitud.empresa', 'solicitud.convocatoria', 'ministeraciones');
 
         return response()->json($convenio);
     }
@@ -115,7 +115,7 @@ class ConvenioController extends Controller
             try {
                 $solicitud->load('user');
                 if ($solicitud->user) {
-                    $solicitud->user->notify(new ConvenioCreado($convenio->load('solicitud.institucion')));
+                    $solicitud->user->notify(new ConvenioCreado($convenio->load('solicitud.empresa')));
                 }
             } catch (\Throwable $e) {
                 Log::warning('ConvenioCreado notification failed', ['error' => $e->getMessage()]);

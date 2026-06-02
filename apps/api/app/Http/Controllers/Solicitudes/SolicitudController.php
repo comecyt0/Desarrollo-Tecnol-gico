@@ -256,6 +256,36 @@ class SolicitudController extends Controller
     }
 
     /**
+     * Admin-only: ver TODA la documentación de cualquier solicitud sin restricción.
+     * Útil para auditoría y supervisión. Carga TODAS las relaciones relevantes:
+     * convocatoria + programa, empresa, área, observaciones, documentos del solicitante,
+     * asignaciones con dictamen, ministración con banco + factura/carta, convenio,
+     * usuario propietario completo.
+     */
+    public function adminShowFull(Solicitud $solicitud)
+    {
+        $solicitud->load([
+            'user.empresa',
+            'user.rol',
+            'convocatoria.tipoPrograma.campos',
+            'convocatoria.tipoPrograma.documentos',
+            'convocatoria.tipoPrograma.rubros',
+            'convocatoria.tipoPrograma.criteriosEvaluacion',
+            'empresa',
+            'areaConocimiento',
+            'observaciones',
+            'documentos',
+            'asignaciones.dictamen',
+            'asignaciones.evaluador',
+            'ministracion.banco',
+            'convenio',
+            'informe',
+        ]);
+
+        return response()->json($solicitud);
+    }
+
+    /**
      * Transition a solicitud from borrador → enviada
      */
     public function enviar(Request $request, Solicitud $solicitud)
