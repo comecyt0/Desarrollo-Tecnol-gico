@@ -19,6 +19,12 @@ class RegistroAccesoController extends Controller
 {
     /**
      * Public endpoint — submit a new access request.
+     *
+     * Recibe datos extendidos del postulante:
+     *   - cuenta:    nombre, email, password
+     *   - empresa:   empresa_nombre, rfc, tipo_persona, rol_supervision
+     *   - contactos: { responsable, legal, administrativo, tecnico } cada uno {nombre, telefono, correo}
+     *   - terminos:  terminos_aceptados (bool, required = true)
      */
     public function store(Request $request)
     {
@@ -32,20 +38,50 @@ class RegistroAccesoController extends Controller
                 Rule::unique('solicitudes_acceso', 'email'),
             ],
             'password' => 'required|string|min:8|confirmed',
-            'institucion_nombre' => 'required|string|max:255',
+            'empresa_nombre' => 'required|string|max:255',
             'cargo' => 'nullable|string|max:255',
             'telefono' => 'nullable|string|max:20',
             'motivo' => 'nullable|string',
+
+            // Datos de la empresa
+            'empresa_datos' => 'nullable|array',
+            'empresa_datos.rfc' => 'nullable|string|max:13',
+            'empresa_datos.tipo_persona' => 'nullable|in:fisica,moral,asociacion_civil,otro',
+            'empresa_datos.rol_supervision' => 'nullable|string|max:255',
+
+            // Contactos por rol
+            'contactos' => 'nullable|array',
+            'contactos.responsable.nombre' => 'nullable|string|max:255',
+            'contactos.responsable.telefono' => 'nullable|string|max:20',
+            'contactos.responsable.correo' => 'nullable|email|max:255',
+            'contactos.legal.nombre' => 'nullable|string|max:255',
+            'contactos.legal.telefono' => 'nullable|string|max:20',
+            'contactos.legal.correo' => 'nullable|email|max:255',
+            'contactos.administrativo.nombre' => 'nullable|string|max:255',
+            'contactos.administrativo.telefono' => 'nullable|string|max:20',
+            'contactos.administrativo.correo' => 'nullable|email|max:255',
+            'contactos.tecnico.nombre' => 'nullable|string|max:255',
+            'contactos.tecnico.telefono' => 'nullable|string|max:20',
+            'contactos.tecnico.correo' => 'nullable|email|max:255',
+
+            // Términos y condiciones — REQUIRED
+            'terminos_aceptados' => 'required|accepted',
+        ], [
+            'terminos_aceptados.required' => 'Debes aceptar los términos y condiciones para continuar.',
+            'terminos_aceptados.accepted' => 'Debes aceptar los términos y condiciones para continuar.',
         ]);
 
         $solicitudAcceso = SolicitudAcceso::create([
             'nombre' => $request->nombre,
             'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'institucion_nombre' => $request->empresa_nombre,
+            'password' => $request->password, // cast 'hashed' del modelo se encarga
+            'empresa_nombre' => $request->empresa_nombre,
             'cargo' => $request->cargo,
             'telefono' => $request->telefono,
             'motivo' => $request->motivo,
+            'empresa_datos' => $request->empresa_datos,
+            'contactos' => $request->contactos,
+            'terminos_aceptados' => true,
             'estado' => 'pendiente',
         ]);
 
@@ -75,6 +111,8 @@ class RegistroAccesoController extends Controller
 
     /**
      * Admin only — approve an access request and create the user account.
+     * Copia los datos extendidos (empresa_datos, contactos) a la nueva
+     * Empresa y User creados.
      */
     public function aprobar(SolicitudAcceso $solicitudAcceso)
     {
@@ -85,11 +123,27 @@ class RegistroAccesoController extends Controller
         }
 
         DB::transaction(function () use ($solicitudAcceso) {
-            // Find or create institution
+            $empresaDatos = (array) ($solicitudAcceso->empresa_datos ?? []);
+
+            // Find or create empresa con los datos extendidos
             $empresa = Empresa::firstOrCreate(
                 ['nombre' => $solicitudAcceso->empresa_nombre],
-                ['nombre' => $solicitudAcceso->empresa_nombre]
+                [
+                    'nombre' => $solicitudAcceso->empresa_nombre,
+                    'rfc' => $empresaDatos['rfc'] ?? null,
+                    'tipo_persona' => $empresaDatos['tipo_persona'] ?? null,
+                    'rol_supervision' => $empresaDatos['rol_supervision'] ?? null,
+                ]
             );
+
+            // Si la empresa ya existía y nos llegaron datos nuevos, mergeamos los faltantes
+            if ($empresa->wasRecentlyCreated === false && ! empty($empresaDatos)) {
+                $empresa->fill(array_filter([
+                    'rfc' => $empresa->rfc ?: ($empresaDatos['rfc'] ?? null),
+                    'tipo_persona' => $empresa->tipo_persona ?: ($empresaDatos['tipo_persona'] ?? null),
+                    'rol_supervision' => $empresa->rol_supervision ?: ($empresaDatos['rol_supervision'] ?? null),
+                ]))->save();
+            }
 
             // Create the user account (rol_id=4 = solicitante)
             $user = User::create([
@@ -101,6 +155,7 @@ class RegistroAccesoController extends Controller
                 'activo' => true,
                 'cargo' => $solicitudAcceso->cargo,
                 'telefono' => $solicitudAcceso->telefono,
+                'terminos_aceptados_at' => $solicitudAcceso->terminos_aceptados ? now() : null,
             ]);
 
             // Mark request as approved

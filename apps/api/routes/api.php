@@ -86,6 +86,12 @@ Route::middleware([
         Route::get('{tipo_programa_id}', [ProgramaCatalogController::class, 'show']);
     });
 
+    // Categorías de apoyo (Fomento, Talento, Otra) — público para listar
+    Route::get('categorias-apoyo', function () {
+        return \App\Models\CategoriaApoyo::where('activa', true)
+            ->orderBy('orden')->orderBy('nombre')->get();
+    });
+
     // Carousel público (login page) — no authentication required
     Route::get('carousel/slides', [CarouselController::class, 'publicIndex']);
 
@@ -170,6 +176,7 @@ Route::middleware([
             Route::apiResource('ministraciones', MinistracionController::class)->parameters(['ministraciones' => 'ministracion']);
             Route::apiResource('informes', InformeController::class)->parameters(['informes' => 'informe']);
             Route::apiResource('empresas', EmpresaController::class)->parameters(['empresas' => 'empresa']);
+            Route::apiResource('categorias-apoyo', \App\Http\Controllers\Admin\CategoriaApoyoController::class)->parameters(['categorias-apoyo' => 'categoriasApoyo']);
             Route::apiResource('lista-negra', ListaNegraController::class);
             Route::apiResource('notificaciones', NotificacionLogController::class)->only(['index', 'show']);
             Route::post('notificaciones/{notificacion}/leer', [NotificacionLogController::class, 'marcarLeida']);

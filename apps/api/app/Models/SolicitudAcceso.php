@@ -18,6 +18,9 @@ class SolicitudAcceso extends Model
     protected $casts = [
         'revisado_at' => 'datetime',
         'password' => 'hashed',
+        'empresa_datos' => 'array',
+        'contactos' => 'array',
+        'terminos_aceptados' => 'boolean',
     ];
 
     /**
