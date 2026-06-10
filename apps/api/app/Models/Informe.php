@@ -6,7 +6,13 @@ use Illuminate\Database\Eloquent\Model;
 
 class Informe extends Model
 {
-    protected $guarded = [];
+    // SEV-1 — Denylist. PK y timestamps bloqueados; `estado` permanece asignable
+    // porque el flujo revisor lo actualiza, protegido por middleware revisor.
+    protected $guarded = [
+        'id',
+        'created_at',
+        'updated_at',
+    ];
 
     protected $table = 'informes';
 

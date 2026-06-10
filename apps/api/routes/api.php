@@ -22,6 +22,7 @@ use App\Http\Controllers\Catalogos\ProgramaCatalogController;
 use App\Http\Controllers\Convocatorias\ConvocatoriaController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DocumentoController;
+use App\Http\Controllers\HealthController;
 use App\Http\Controllers\DocumentoUploadController;
 use App\Http\Controllers\Evaluaciones\EvaluadorController;
 use App\Http\Controllers\InformeController;
@@ -45,6 +46,11 @@ use Illuminate\Support\Facades\Route;
 | API Routes
 |--------------------------------------------------------------------------
 */
+
+// B4 — Endpoint de monitoreo externo. Fuera del ApiGateway/RateLimit para que
+// el monitor pueda detectar caídas del propio gateway. Throttle suave 60/min para
+// evitar abuso. Auth por X-Health-Token (shared secret timing-safe).
+Route::get('health', [HealthController::class, 'check'])->middleware('throttle:60,1');
 
 // Middleware Global de Seguridad para todas las APIS
 Route::middleware([

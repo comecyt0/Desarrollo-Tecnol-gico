@@ -6,9 +6,16 @@ use Illuminate\Database\Eloquent\Model;
 
 class AsignacionEvaluador extends Model
 {
-    protected $guarded = [];
-
     protected $table = 'asignaciones_evaluador';
+
+    // SEV-1 — Denylist. PK y timestamps bloqueados; el resto (incluyendo 'estado')
+    // permanece asignable porque el flujo iniciar/concluir lo necesita, pero los
+    // endpoints están protegidos por middleware admin/evaluador.
+    protected $guarded = [
+        'id',
+        'created_at',
+        'updated_at',
+    ];
 
     public function solicitud()
     {

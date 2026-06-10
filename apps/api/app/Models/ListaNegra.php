@@ -9,9 +9,15 @@ class ListaNegra extends Model
 {
     use HasFactory;
 
-    protected $guarded = [];
-
     protected $table = 'lista_negra';
+
+    // SEV-1 — Denylist. PK y timestamps bloqueados. `activa` permanece asignable
+    // porque el endpoint admin "remover veto" lo necesita; está protegido por middleware.
+    protected $guarded = [
+        'id',
+        'created_at',
+        'updated_at',
+    ];
 
     public function institucion()
     {

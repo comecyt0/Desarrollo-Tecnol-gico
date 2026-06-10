@@ -15,9 +15,19 @@ class Empresa extends Model
 {
     use HasFactory;
 
-    protected $guarded = [];
-
     protected $table = 'empresas';
+
+    // SEV-1 — Denylist. Bloquea explícitamente `en_lista_negra` (sólo el flujo
+    // admin de sanciones puede setearlo) y los timestamps. El resto de columnas
+    // del schema (nombre, acronimo, tipo, direccion, rfc, tipo_persona, etc.) son
+    // editables vía los formularios validados de admin/postulante.
+    protected $guarded = [
+        'id',
+        'en_lista_negra',
+        'created_at',
+        'updated_at',
+        'deleted_at',
+    ];
 
     public function municipio()
     {

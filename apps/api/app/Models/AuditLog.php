@@ -8,7 +8,10 @@ class AuditLog extends Model
 {
     public $timestamps = false;
 
-    protected $guarded = [];
+    // SEV-1 — AuditLog es WORM (write-once, read-many) por diseño.
+    // Denylist conservadora: bloquea PK. Los controllers nunca exponen update/delete
+    // sobre este modelo (sólo el servicio interno de auditoría crea filas).
+    protected $guarded = ['id'];
 
     protected $casts = [
         'metadata' => 'array',

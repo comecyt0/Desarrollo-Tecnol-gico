@@ -19,16 +19,28 @@ return [
 
     'allowed_methods' => ['*'],
 
-    // Lista explícita: 'cuando se use credentials' (cookies HttpOnly) NO se permite '*'.
-    // Se rellena desde env CORS_ALLOWED_ORIGINS (CSV) + defaults locales.
-    'allowed_origins' => array_values(array_filter(array_unique(array_merge(
-        ['http://localhost:3000', 'http://127.0.0.1:3000'],
-        array_map('trim', explode(',', (string) env('CORS_ALLOWED_ORIGINS', '')))
-    )))),
+    // SEV-2 — En producción NUNCA se incluyen orígenes locales. Sólo la lista CSV
+    // declarada en CORS_ALLOWED_ORIGINS. Si la variable está vacía o contiene '*' /
+    // 'localhost' en producción, el DeployCheck command falla antes de iniciar el servicio.
+    //
+    // En 'local'/'testing' se permiten los orígenes de desarrollo por defecto.
+    'allowed_origins' => (function () {
+        $env = env('APP_ENV', 'production');
+        $csv = array_values(array_filter(array_map('trim', explode(',', (string) env('CORS_ALLOWED_ORIGINS', '')))));
 
-    // En dev local también aceptamos puertos arbitrarios y localhost vs 127.0.0.1.
-    // En producción setea CORS_ALLOWED_ORIGINS al dominio real y este patrón no aplica.
-    'allowed_origins_patterns' => env('APP_ENV', 'production') === 'local'
+        if (in_array($env, ['local', 'testing'], true)) {
+            return array_values(array_unique(array_merge(
+                ['http://localhost:3000', 'http://127.0.0.1:3000'],
+                $csv
+            )));
+        }
+
+        // Producción: lista estricta, sin defaults locales.
+        return $csv;
+    })(),
+
+    // Patterns sólo en dev: puertos arbitrarios de localhost. En producción → [].
+    'allowed_origins_patterns' => in_array(env('APP_ENV', 'production'), ['local', 'testing'], true)
         ? ['#^http://(localhost|127\.0\.0\.1)(:\d+)?$#']
         : [],
 

@@ -14,7 +14,8 @@ class CategoriaApoyo extends Model
 {
     protected $table = 'categorias_apoyo';
 
-    protected $guarded = [];
+    // SEV-1 defense-in-depth: bloquea mass-assign de PK/timestamps.
+    protected $guarded = ['id', 'created_at', 'updated_at'];
 
     protected $casts = [
         'reembolsable' => 'boolean',

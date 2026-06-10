@@ -11,7 +11,8 @@ class Convocatoria extends Model
 {
     use HasFactory;
 
-    protected $guarded = [];
+    // SEV-1 defense-in-depth: bloquea mass-assign de PK/timestamps.
+    protected $guarded = ['id', 'created_at', 'updated_at'];
 
     protected $table = 'convocatorias';
 

@@ -133,6 +133,25 @@ return [
     | See here: https://github.com/namshi/jose/tree/master/src/Namshi/JOSE/Signer/OpenSSL
     | for possible values.
     |
+    | TODO [M1 — SEGURIDAD, MIGRACIÓN PLANIFICADA]
+    |   Algoritmo actual: HS256 (firma simétrica con JWT_SECRET en .env).
+    |   Aceptable hoy porque:
+    |     - .env tiene permisos 600
+    |     - El servidor es bare-metal con accesos físicos restringidos
+    |     - JWT_SECRET ≥ 64 chars random y rotable via `php artisan jwt:secret --force`
+    |   Migrar a RS256/ES256 cuando se cumpla alguna de estas condiciones:
+    |     1. Se integre HSM/KMS institucional (Estrategia Digital Nacional / TIC del EdoMex).
+    |     2. Múltiples servicios consumirán el JWT (microservicios) y conviene clave pública.
+    |     3. Auditoría externa lo exija (SOC2 / ISO27001 institucional).
+    |   Pasos de migración (cuando aplique):
+    |     a) Generar keypair: openssl genrsa -out storage/oauth/jwt-private.pem 4096
+    |        openssl rsa -in storage/oauth/jwt-private.pem -pubout -out storage/oauth/jwt-public.pem
+    |     b) chmod 600 jwt-private.pem; chown www-data:www-data
+    |     c) Setear JWT_ALGO=RS256 + JWT_KEYS_PRIVATE / JWT_KEYS_PUBLIC en .env
+    |     d) Periodo de gracia: emitir RS256 pero validar HS256 también durante 24h
+    |        para no invalidar sesiones activas.
+    |   Owner del TODO: Equipo de Infraestructura COMECYT.
+    |   Fecha objetivo: cuando se incorpore HSM (sin SLA fijo).
     */
 
     'algo' => env('JWT_ALGO', 'HS256'),

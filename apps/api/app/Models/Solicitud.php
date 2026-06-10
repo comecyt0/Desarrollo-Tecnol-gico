@@ -9,9 +9,30 @@ class Solicitud extends Model
 {
     use SoftDeletes;
 
-    protected $guarded = [];
-
     protected $table = 'solicitudes';
+
+    // SEV-1 — Denylist robusta a migraciones futuras. Bloquea explícitamente los
+    // campos que jamás deben modificarse vía mass-assignment desde un DTO de cliente:
+    //   - 'id'           : PK
+    //   - 'folio'        : asignado por el sistema (unique constraint, no editable)
+    //   - 'estado'       : sólo se modifica vía métodos de servicio con transiciones validadas
+    //   - 'notas_internas' : sólo admins/revisores via endpoints autorizados
+    //   - 'etapa_estado' : ciclo controlado por el flujo de evaluación
+    //   - 'estado_informe' : ciclo controlado por revisor
+    //   - timestamps y deleted_at
+    // Cualquier columna no listada aquí es asignable; los controllers ya validan
+    // con $request->validate() (defensa en 2 capas — Gold Rule).
+    protected $guarded = [
+        'id',
+        'folio',
+        'estado',
+        'notas_internas',
+        'etapa_estado',
+        'estado_informe',
+        'created_at',
+        'updated_at',
+        'deleted_at',
+    ];
 
     protected $casts = [
         'fecha_inicio_evento' => 'date',

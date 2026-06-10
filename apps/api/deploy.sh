@@ -22,13 +22,40 @@ section() { echo -e "\n${YELLOW}=== $1 ===${NC}"; }
 
 section "1. Verificar entorno de producción"
 
-[[ "${APP_ENV:-}" == "production" ]] || warn "APP_ENV no es 'production'. Continúa bajo tu responsabilidad."
-[[ "${APP_DEBUG:-}" == "false" ]]   || warn "APP_DEBUG no es 'false'. Asegúrate de desactivarlo en .env"
-[[ -n "${APP_KEY:-}" ]]             || error "APP_KEY no está definida. Ejecuta: php artisan key:generate"
-[[ -n "${JWT_SECRET:-}" ]]          || error "JWT_SECRET no está definida. Ejecuta: php artisan jwt:secret"
+# ── Hard-fail si APP_ENV/APP_DEBUG no son seguros (SEV-1: APP_DEBUG=true expone stack traces) ─
+[[ "${APP_ENV:-}" == "production" ]] || error "APP_ENV debe ser 'production' en deploy. Actualmente: '${APP_ENV:-vacío}'"
+[[ "${APP_DEBUG:-}" == "false" ]]   || error "APP_DEBUG debe ser 'false' en producción. Actualmente: '${APP_DEBUG:-vacío}'"
+[[ -n "${APP_KEY:-}" ]]             || error "APP_KEY no está definida. Ejecuta: php artisan key:generate --force"
+[[ -n "${JWT_SECRET:-}" ]]          || error "JWT_SECRET no está definida. Ejecuta: php artisan jwt:secret --force"
 [[ -n "${DB_DATABASE:-}" ]]         || error "DB_DATABASE no está definida en .env"
 
-info "Variables de entorno básicas presentes"
+# ── Detección de credenciales débiles / por defecto (SEV-1) ───────────────────
+if grep -qE '^DB_PASSWORD=(12345|password|admin|comecyt|root|secret|1234567)' .env 2>/dev/null; then
+    error "DB_PASSWORD débil detectada en .env. Rótala antes de deployar (ALTER USER ... WITH PASSWORD '...')."
+fi
+if grep -qE '^DB_PASSWORD=$' .env 2>/dev/null; then
+    error "DB_PASSWORD está vacía en .env."
+fi
+if grep -qE '^JWT_SECRET=(secret|change-?me|local|dev)' .env 2>/dev/null; then
+    error "JWT_SECRET débil detectada. Ejecuta: php artisan jwt:secret --force"
+fi
+
+# ── Validar configuración CORS estricta en producción (SEV-2) ─────────────────
+if [[ -z "${CORS_ALLOWED_ORIGINS:-}" ]]; then
+    error "CORS_ALLOWED_ORIGINS no está definida. Setéala con la lista CSV de orígenes permitidos."
+fi
+if [[ "${CORS_ALLOWED_ORIGINS}" == *"*"* ]] || [[ "${CORS_ALLOWED_ORIGINS}" == *"localhost"* ]]; then
+    error "CORS_ALLOWED_ORIGINS no debe contener '*' ni 'localhost' en producción. Valor: ${CORS_ALLOWED_ORIGINS}"
+fi
+
+# ── Permisos restrictivos del .env (M1) ───────────────────────────────────────
+ENV_PERMS=$(stat -c "%a" .env 2>/dev/null || stat -f "%Lp" .env 2>/dev/null || echo "???")
+if [[ "$ENV_PERMS" != "600" ]] && [[ "$ENV_PERMS" != "400" ]]; then
+    warn ".env tiene permisos $ENV_PERMS. Recomendado: chmod 600 .env"
+    chmod 600 .env && info "Permisos de .env corregidos a 600"
+fi
+
+info "Variables de entorno básicas presentes y validadas"
 
 section "2. Instalar dependencias PHP (producción)"
 composer install --no-dev --optimize-autoloader --no-interaction
@@ -56,9 +83,14 @@ section "6. Storage symlink"
 php artisan storage:link 2>/dev/null || warn "Storage link ya existe — OK"
 info "Storage symlink listo"
 
-section "7. Permisos de directorios"
-chmod -R 775 storage bootstrap/cache
-info "Permisos aplicados a storage/ y bootstrap/cache/"
+section "7. Permisos de directorios (least privilege)"
+# Default restrictivo: dueño rwx, grupo y otros r-x (755).
+chmod -R 755 storage bootstrap/cache
+# Carpetas que Laravel sí escribe → grupo con escritura (775).
+chmod -R 775 storage/framework/cache storage/framework/sessions storage/framework/views storage/logs
+# Ownership al usuario del servicio web (ajusta si no es www-data).
+chown -R www-data:www-data storage bootstrap/cache 2>/dev/null || warn "No se pudo cambiar owner (¿no eres root?). Hazlo manualmente: sudo chown -R www-data:www-data storage bootstrap/cache"
+info "Permisos endurecidos: 755 base + 775 sólo en carpetas de escritura runtime"
 
 section "8. Scheduler — configurar crontab"
 

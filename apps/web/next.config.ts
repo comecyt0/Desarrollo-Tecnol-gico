@@ -1,17 +1,60 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 
-// __dirname no existe en ESM; lo derivamos de import.meta.url para evitar
-// `ReferenceError: __dirname is not defined` cuando Next compila el config a ESM
-// (sucede cuando el binario SWC nativo no está y cae al fallback WASM).
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_ORIGIN = (() => {
+  try {
+    return new URL(API_URL).origin;
+  } catch {
+    return "http://localhost:8000";
+  }
+})();
 
 const nextConfig: NextConfig = {
-  turbopack: {
-    root: path.resolve(__dirname),
+  output: "standalone",
+
+  images: {
+    remotePatterns: [
+      { protocol: "https", hostname: "picsum.photos" },
+      { protocol: "https", hostname: "images.comecyt.gob.mx" },
+      { protocol: "https", hostname: "**.edomex.gob.mx" },
+      { protocol: "http", hostname: "localhost", port: "8000" },
+    ],
+  },
+
+  async headers() {
+    return [
+      {
+        source: "/(.*)",
+        headers: [
+          { key: "X-Frame-Options", value: "DENY" },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          {
+            key: "Permissions-Policy",
+            value: "camera=(), microphone=(), geolocation=(), payment=(), usb=()",
+          },
+          {
+            key: "Strict-Transport-Security",
+            value: "max-age=31536000; includeSubDomains",
+          },
+          {
+            key: "Content-Security-Policy",
+            value:
+              `default-src 'self'; ` +
+              `script-src 'self' 'unsafe-inline'; ` +
+              `style-src 'self' 'unsafe-inline'; ` +
+              `font-src 'self' data:; ` +
+              `img-src 'self' data: blob: ${API_ORIGIN} https://picsum.photos https://*.edomex.gob.mx; ` +
+              `connect-src 'self' ${API_ORIGIN} https://*.sentry.io wss: ws:; ` +
+              `frame-ancestors 'none'; ` +
+              `base-uri 'self'; ` +
+              `form-action 'self'; ` +
+              `object-src 'none'`,
+          },
+        ],
+      },
+    ];
   },
 };
 

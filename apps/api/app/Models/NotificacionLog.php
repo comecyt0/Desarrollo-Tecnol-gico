@@ -9,7 +9,13 @@ use Illuminate\Support\Facades\Log;
 
 class NotificacionLog extends Model
 {
-    protected $guarded = [];
+    // SEV-1 — Las notificaciones se crean server-side. Denylist conservadora:
+    // sólo bloquea PK/timestamps. Los endpoints de marcar leído validan ownership.
+    protected $guarded = [
+        'id',
+        'created_at',
+        'updated_at',
+    ];
 
     protected $table = 'notificaciones_log';
 

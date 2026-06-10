@@ -1,0 +1,133 @@
+# M5 — SAST automatizado por PR + scheduled.
+# Combina Semgrep (OWASP Top 10 + p/security-audit) y Gitleaks (secret scanning).
+# Falla el merge cuando hay hallazgos críticos/altos.
+name: Security SAST
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Lunes 06:00 America/Mexico_City — 12:00 UTC.
+    - cron: '0 12 * * 1'
+  workflow_dispatch: {}
+
+# Permisos mínimos.
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+  pull-requests: write
+
+jobs:
+  semgrep:
+    name: Semgrep — OWASP Top 10 + security-audit
+    runs-on: ubuntu-latest
+    container:
+      image: semgrep/semgrep
+    if: github.actor != 'dependabot[bot]'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Semgrep scan
+        run: |
+          semgrep ci \
+            --config p/owasp-top-ten \
+            --config p/security-audit \
+            --config p/php \
+            --config p/typescript \
+            --config p/nextjs \
+            --config p/laravel \
+            --severity ERROR \
+            --severity WARNING \
+            --error \
+            --sarif --sarif-output=semgrep-results.sarif || SAST_EXIT=$?
+          echo "SAST_EXIT=${SAST_EXIT:-0}" >> $GITHUB_ENV
+        env:
+          SEMGREP_RULES: "p/owasp-top-ten p/security-audit"
+
+      - name: Upload SARIF to GitHub Security
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: semgrep-results.sarif
+          category: semgrep
+
+      - name: Fail on critical/high findings
+        if: env.SAST_EXIT != '0'
+        run: |
+          echo "::error::Semgrep encontró hallazgos de severidad ≥ WARNING. Revisa el reporte arriba."
+          exit 1
+
+  gitleaks:
+    name: Gitleaks — Secret scanning
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (con histórico completo)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Sólo escanea cambios en PR; en main escanea el repo completo.
+          GITLEAKS_ENABLE_COMMENTS: "true"
+          GITLEAKS_ENABLE_UPLOAD_ARTIFACT: "true"
+
+  composer-audit:
+    name: Composer audit (PHP supply chain)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          tools: composer:v2
+
+      - name: Composer audit
+        working-directory: apps/api
+        run: |
+          composer install --no-dev --prefer-dist --no-interaction --no-progress
+          composer audit --no-dev --format=plain
+
+  npm-audit:
+    name: NPM audit (Node supply chain)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: NPM audit (high+)
+        working-directory: apps/web
+        run: |
+          npm ci --legacy-peer-deps
+          npm audit --audit-level=high
+
+  eslint-security:
+    name: ESLint security rules
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install + lint
+        working-directory: apps/web
+        run: |
+          npm ci --legacy-peer-deps
+          npm run lint

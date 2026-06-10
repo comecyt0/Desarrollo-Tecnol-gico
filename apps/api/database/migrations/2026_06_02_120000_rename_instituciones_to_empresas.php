@@ -16,6 +16,18 @@ use Illuminate\Support\Facades\DB;
  * antiguas. Después del renombre, se recrean apuntando a `empresas`.
  *
  * Idempotente: si la BD ya está migrada, este migration no hace nada.
+ *
+ * ─── [B1] LEGACY: columna `factura_institucion_url` en `ministraciones` ───────
+ * NO se renombra a `factura_empresa_url` porque:
+ *   1) Es una URL de archivo (storage path), no una referencia a la entidad
+ *      Empresa renombrada — el nombre describe el tipo de documento ("factura
+ *      de la institución que recibe el pago"), no la tabla.
+ *   2) Renombrarla obligaría a migrar archivos ya almacenados con el path viejo
+ *      en producción, sin ganancia funcional.
+ *   3) El modelo Ministracion::$fillable incluye este campo en su forma legacy
+ *      para mantener compatibilidad con uploads previos.
+ * Si se decide normalizarla en el futuro, hacerlo en una migración separada
+ * que también renombre los archivos físicos en storage/app/public/ministraciones/.
  */
 return new class extends Migration
 {

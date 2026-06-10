@@ -1,0 +1,82 @@
+# M4 — Dependabot: vigilancia continua de dependencias con foco en parches de seguridad.
+# Versión 2 del esquema. Actualizaciones semanales, agrupadas por ecosistema.
+# Las security-updates son automáticas: Dependabot abre PR al instante cuando GitHub
+# detecta CVE sobre una dependencia vigente del lockfile.
+version: 2
+updates:
+  # ── Frontend Next.js ──────────────────────────────────────────────────
+  - package-ecosystem: "npm"
+    directory: "/apps/web"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "07:00"
+      timezone: "America/Mexico_City"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "security"
+      - "frontend"
+    commit-message:
+      prefix: "chore(web)"
+      include: "scope"
+    groups:
+      react-ecosystem:
+        patterns:
+          - "react"
+          - "react-dom"
+          - "next"
+          - "@next/*"
+      tailwind-ui:
+        patterns:
+          - "tailwindcss"
+          - "@tailwindcss/*"
+          - "tailwind-merge"
+          - "tw-animate-css"
+      testing:
+        patterns:
+          - "vitest"
+          - "@vitest/*"
+          - "@testing-library/*"
+          - "playwright"
+          - "axe-core"
+      sentry:
+        patterns:
+          - "@sentry/*"
+
+  # ── Backend Laravel ───────────────────────────────────────────────────
+  - package-ecosystem: "composer"
+    directory: "/apps/api"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "07:30"
+      timezone: "America/Mexico_City"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "security"
+      - "backend"
+    commit-message:
+      prefix: "chore(api)"
+      include: "scope"
+    groups:
+      laravel:
+        patterns:
+          - "laravel/*"
+          - "illuminate/*"
+      jwt-auth:
+        patterns:
+          - "tymon/jwt-auth"
+          - "firebase/php-jwt"
+
+  # ── GitHub Actions (security advisories del propio CI) ────────────────
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    labels:
+      - "ci"
+      - "security"
+    commit-message:
+      prefix: "chore(ci)"

@@ -114,6 +114,67 @@ class DeployCheck extends Command
             warning: false
         ) ?: $errors++;
 
+        // SEV-2 — CORS estricto en producción
+        $corsEnv = (string) env('CORS_ALLOWED_ORIGINS', '');
+        $this->check('CORS_ALLOWED_ORIGINS definida (no vacía)',
+            $corsEnv !== '',
+            'Definir CORS_ALLOWED_ORIGINS=https://dominio.gob.mx (lista CSV)',
+            warning: false
+        ) ?: $errors++;
+
+        $this->check('CORS_ALLOWED_ORIGINS no contiene "*"',
+            ! str_contains($corsEnv, '*'),
+            'Eliminar "*" de CORS_ALLOWED_ORIGINS — se requiere lista explícita por supports_credentials=true',
+            warning: false
+        ) ?: $errors++;
+
+        $this->check('CORS_ALLOWED_ORIGINS no contiene "localhost" / "127.0.0.1" en producción',
+            ! preg_match('/localhost|127\.0\.0\.1/i', $corsEnv),
+            'Quitar referencias a localhost de CORS_ALLOWED_ORIGINS en .env de producción',
+            warning: false
+        ) ?: $errors++;
+
+        // SEV-1 — Detección de credenciales débiles
+        $dbPass = (string) env('DB_PASSWORD', '');
+        $this->check('DB_PASSWORD no es default débil',
+            $dbPass !== '' && ! preg_match('/^(12345|password|admin|comecyt|root|secret|1234567)\d*$/i', $dbPass),
+            'Rotar DB_PASSWORD a una contraseña fuerte (≥20 chars aleatorios)',
+            warning: false
+        ) ?: $errors++;
+
+        $jwtSecret = (string) env('JWT_SECRET', '');
+        $this->check('JWT_SECRET no es valor placeholder',
+            $jwtSecret !== '' && ! preg_match('/^(secret|change-?me|local|dev|test)/i', $jwtSecret) && strlen($jwtSecret) >= 32,
+            'Regenerar JWT_SECRET: php artisan jwt:secret --force',
+            warning: false
+        ) ?: $errors++;
+
+        // M2 — Hashing recomendado: Argon2id si está disponible
+        $this->check('HASH_DRIVER = argon2id (preferido) o bcrypt',
+            in_array(config('hashing.driver'), ['argon2id', 'argon', 'bcrypt'], true),
+            'Setear HASH_DRIVER=argon2id en .env (recomendado) o bcrypt como fallback',
+            warning: true
+        ) ?: $warnings++;
+
+        if (config('hashing.driver') === 'bcrypt') {
+            $this->check('BCRYPT_ROUNDS ≥ 12 (si bcrypt)',
+                ((int) config('hashing.bcrypt.rounds', 10)) >= 12,
+                'Setear BCRYPT_ROUNDS=12 (mínimo OWASP 2023) en .env',
+                warning: true
+            ) ?: $warnings++;
+        }
+
+        // Permisos del .env
+        $envPath = base_path('.env');
+        if (file_exists($envPath)) {
+            $perms = substr(sprintf('%o', fileperms($envPath)), -3);
+            $this->check('.env con permisos 600 ó 400',
+                in_array($perms, ['600', '400'], true),
+                "Ejecutar: chmod 600 {$envPath} (actual: {$perms})",
+                warning: true
+            ) ?: $warnings++;
+        }
+
         // ── Resumen ───────────────────────────────────────────────
         $this->line(str_repeat('─', 55));
 
