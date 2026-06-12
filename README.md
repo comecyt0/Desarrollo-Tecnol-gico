@@ -1,12 +1,24 @@
-# 🚀 COMECYT - Sistema de Gestión de Apoyo Científico
+# 🚀 COMECYT — Gestión de Proyectos de Desarrollo Tecnológico y Vinculación
 
-**Status:** MVP Complete ✅ | **Version:** 2.9 | **Date:** April 6, 2026
+**Status:** Producción ✅ | **Version:** 8.0 (post-auditoría seguridad) | **Date:** 2026-06-12
 
-Sistema integral para administrar el ciclo completo de convocatorias científicas: publicación, solicitud, revisión, evaluación, convenio y ministración.
+Sistema institucional del COMECYT (Consejo Mexiquense de Ciencia y Tecnología) para administrar el ciclo completo de convocatorias de financiamiento: publicación, postulación, revisión, evaluación, convenio, ministración, seguimiento y cierre.
 
 ---
 
-## ⚡ Quick Start
+## 📚 Documentación
+
+| Para... | Lee |
+|---|---|
+| **Desplegar en un servidor nuevo** | [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) — guía completa 60–90 min |
+| **Administrar el sistema día a día** | [`docs/OPERATIONS.md`](docs/OPERATIONS.md) — manual de operación |
+| **Responder a un incidente de seguridad** | [`docs/security/incident-response.md`](docs/security/incident-response.md) — runbook IR + LFPDPPP |
+| **Entender la arquitectura** | [`docs/README.md`](docs/README.md) — índice + diagramas |
+| **Desarrollar (dev local)** | Resto de este README ⬇️ |
+
+---
+
+## ⚡ Quick Start (DEV LOCAL)
 
 ### Prerequisites
 ```bash
