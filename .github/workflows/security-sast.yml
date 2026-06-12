@@ -29,7 +29,7 @@ jobs:
     if: github.actor != 'dependabot[bot]'
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Semgrep scan
         run: |
@@ -66,7 +66,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout (con histórico completo)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -82,7 +82,7 @@ jobs:
     name: Composer audit (PHP supply chain)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
@@ -100,7 +100,7 @@ jobs:
     name: NPM audit (Node supply chain)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: actions/setup-node@v4
         with:
@@ -118,7 +118,7 @@ jobs:
     name: ESLint security rules
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: actions/setup-node@v4
         with:

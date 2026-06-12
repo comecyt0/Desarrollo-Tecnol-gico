@@ -16,7 +16,7 @@ jobs:
     name: Generar y publicar SBOMs
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       # ── PHP / Composer SBOM ──────────────────────────────────────────
       - uses: shivammathur/setup-php@v2
