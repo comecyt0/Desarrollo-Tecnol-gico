@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 🔒 Reportar vulnerabilidad de seguridad
+    url: https://github.com/comecyt0/Desarrollo-Tecnol-gico/blob/main/docs/security/SECURITY.md
+    about: NO uses Issues públicos para reportes de seguridad. Sigue el procedimiento en SECURITY.md.
+  - name: 📚 Documentación
+    url: https://github.com/comecyt0/Desarrollo-Tecnol-gico/tree/main/docs
+    about: Revisa la documentación antes de reportar un problema.
+  - name: 💬 Soporte general
+    url: mailto:soporte@comecyt.gob.mx
+    about: Para preguntas que no son bugs ni features, contacta a soporte por correo.

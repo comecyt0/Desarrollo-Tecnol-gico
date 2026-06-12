@@ -1,0 +1,36 @@
+# Auto-asignación de reviewers basada en paths.
+# Formato: <path> <@usuario o @org/equipo>
+#
+# Estos defaults usan @comecyt0 (la cuenta institucional).
+# Ajusta cuando tengas equipos definidos en GitHub Teams.
+
+# Default: cualquier cambio sin reviewer específico
+*                                       @comecyt0
+
+# ── Frontend (apps/web) ─────────────────────────────────────────────
+/apps/web/                              @comecyt0
+
+# ── Backend (apps/api) ──────────────────────────────────────────────
+/apps/api/                              @comecyt0
+/apps/api/database/migrations/          @comecyt0
+
+# ── Seguridad — requieren revisión adicional ──────────────────────────
+/apps/api/app/Http/Middleware/          @comecyt0
+/apps/api/app/Http/Controllers/Auth/    @comecyt0
+/apps/api/config/cors.php               @comecyt0
+/apps/api/config/jwt.php                @comecyt0
+/apps/api/.env.example                  @comecyt0
+/apps/api/deploy.sh                     @comecyt0
+/apps/web/sentry.*.config.ts            @comecyt0
+/apps/web/next.config.ts                @comecyt0
+/.github/                               @comecyt0
+/docs/security/                         @comecyt0
+
+# ── Documentación ────────────────────────────────────────────────────
+/docs/                                  @comecyt0
+/README.md                              @comecyt0
+/CLAUDE.md                              @comecyt0
+
+# ── Infraestructura / CI/CD ──────────────────────────────────────────
+/.github/workflows/                     @comecyt0
+/docs/deploy-templates/                 @comecyt0

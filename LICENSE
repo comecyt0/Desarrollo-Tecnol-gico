@@ -1,0 +1,140 @@
+═════════════════════════════════════════════════════════════════════════════
+LICENCIA DE USO INSTITUCIONAL
+Sistema de Gestión de Proyectos de Desarrollo Tecnológico y Vinculación
+═════════════════════════════════════════════════════════════════════════════
+
+Copyright © 2026 Consejo Mexiquense de Ciencia y Tecnología (COMECYT).
+Gobierno del Estado de México.
+Todos los derechos reservados.
+
+═════════════════════════════════════════════════════════════════════════════
+1. PROPIEDAD INTELECTUAL
+═════════════════════════════════════════════════════════════════════════════
+
+El presente software, su código fuente, documentación, esquemas de base de
+datos, configuraciones, recursos gráficos y todos los componentes asociados
+(en lo sucesivo "el Sistema") son propiedad institucional del Consejo
+Mexiquense de Ciencia y Tecnología (COMECYT), organismo público
+descentralizado del Gobierno del Estado de México.
+
+═════════════════════════════════════════════════════════════════════════════
+2. USOS PERMITIDOS
+═════════════════════════════════════════════════════════════════════════════
+
+Se autoriza el uso del Sistema EXCLUSIVAMENTE para:
+
+a) Operación institucional del COMECYT en la gestión de convocatorias de
+   financiamiento a empresas y proyectos de desarrollo tecnológico.
+
+b) Auditoría de seguridad, revisión técnica y mantenimiento por parte de:
+   - Personal autorizado del COMECYT
+   - Auditores externos contratados con autorización expresa
+   - Equipos de tecnologías de la información del Gobierno del Estado de México
+
+c) Estudios académicos sin fines de lucro previa solicitud y autorización por
+   escrito del COMECYT, indicando claramente las partes que se utilizarán.
+
+d) Adaptación para uso por otras dependencias del Gobierno del Estado de
+   México, previa autorización expresa de la dirección del COMECYT.
+
+═════════════════════════════════════════════════════════════════════════════
+3. USOS PROHIBIDOS
+═════════════════════════════════════════════════════════════════════════════
+
+Queda EXPRESAMENTE PROHIBIDO sin autorización por escrito del COMECYT:
+
+a) La explotación comercial del Sistema, parcial o total, por personas físicas
+   o morales distintas al COMECYT.
+
+b) La redistribución del código fuente o de los recursos del Sistema a
+   terceros no autorizados.
+
+c) El uso del Sistema, en todo o en parte, para fines distintos a los
+   institucionales del COMECYT, sin la autorización referida en la sección 2.
+
+d) La modificación del Sistema con fines de evadir, alterar o eliminar los
+   controles de seguridad, auditoría o registro de acciones implementados.
+
+e) El uso del Sistema para procesar datos personales fuera del marco de la
+   Ley Federal de Protección de Datos Personales en Posesión de los
+   Particulares (LFPDPPP) y la Ley General de Protección de Datos Personales
+   en Posesión de Sujetos Obligados (LGPDPPSO).
+
+f) La eliminación, modificación u ocultamiento de los avisos de copyright,
+   licencia o autoría en el código fuente.
+
+═════════════════════════════════════════════════════════════════════════════
+4. COMPONENTES DE TERCEROS
+═════════════════════════════════════════════════════════════════════════════
+
+El Sistema utiliza bibliotecas y componentes de terceros que se distribuyen
+bajo sus respectivas licencias de código abierto (MIT, Apache 2.0, GPL, BSD,
+entre otras). Las licencias específicas de cada componente se respetan en su
+totalidad. Para el detalle ver:
+
+   - apps/api/composer.json (dependencias PHP)
+   - apps/api/composer.lock
+   - apps/web/package.json (dependencias Node)
+   - apps/web/package-lock.json
+   - El SBOM (Software Bill of Materials) generado en cada release.
+
+═════════════════════════════════════════════════════════════════════════════
+5. DATOS PERSONALES Y CUMPLIMIENTO LFPDPPP
+═════════════════════════════════════════════════════════════════════════════
+
+El Sistema procesa datos personales en términos de:
+
+- Ley Federal de Protección de Datos Personales en Posesión de los
+  Particulares (LFPDPPP)
+- Ley General de Protección de Datos Personales en Posesión de Sujetos
+  Obligados (LGPDPPSO)
+- Aviso de Privacidad Integral publicado en el portal del COMECYT.
+
+El usuario que opere el Sistema o consulte sus datos personales se obliga a:
+
+a) Respetar la confidencialidad de los datos personales contenidos.
+b) Procesar dichos datos exclusivamente conforme a las finalidades
+   autorizadas en el Aviso de Privacidad.
+c) Reportar cualquier vulneración a la seguridad de datos personales conforme
+   al runbook institucional (docs/security/incident-response.md).
+
+═════════════════════════════════════════════════════════════════════════════
+6. EXENCIÓN DE GARANTÍAS
+═════════════════════════════════════════════════════════════════════════════
+
+EL SISTEMA SE PROPORCIONA "TAL CUAL", SIN GARANTÍAS DE NINGUNA NATURALEZA,
+EXPRESAS O IMPLÍCITAS, INCLUYENDO PERO NO LIMITADAS A GARANTÍAS DE
+COMERCIABILIDAD, IDONEIDAD PARA UN PROPÓSITO PARTICULAR O NO INFRACCIÓN.
+
+EN NINGÚN CASO EL COMECYT, SUS DESARROLLADORES, COLABORADORES O PROVEEDORES
+SERÁN RESPONSABLES DE NINGÚN DAÑO DIRECTO, INDIRECTO, INCIDENTAL, ESPECIAL,
+EJEMPLAR O CONSECUENTE QUE SURJA DEL USO DEL SISTEMA O LA IMPOSIBILIDAD DE
+USARLO, AÚN CUANDO HAYAN SIDO ADVERTIDOS DE LA POSIBILIDAD DE TALES DAÑOS.
+
+═════════════════════════════════════════════════════════════════════════════
+7. JURISDICCIÓN APLICABLE
+═════════════════════════════════════════════════════════════════════════════
+
+La presente licencia se rige por las leyes de los Estados Unidos Mexicanos.
+Cualquier controversia derivada de su interpretación o cumplimiento se
+someterá a la jurisdicción de los tribunales competentes del Estado de
+México, renunciando las partes a cualquier otra que pudiera corresponderles.
+
+═════════════════════════════════════════════════════════════════════════════
+8. CONTACTO Y AUTORIZACIONES
+═════════════════════════════════════════════════════════════════════════════
+
+Para solicitar autorizaciones de uso, reportar incidentes de seguridad,
+o cualquier comunicación relativa a esta licencia:
+
+   Consejo Mexiquense de Ciencia y Tecnología (COMECYT)
+   Dirección: [domicilio institucional]
+   Correo:    administracion@comecyt.gob.mx
+   Web:       https://comecyt.edomex.gob.mx
+
+═════════════════════════════════════════════════════════════════════════════
+
+   Fecha de emisión: 2026-06-12
+   Versión del Sistema al momento de la emisión: 8.0.0
+
+═════════════════════════════════════════════════════════════════════════════

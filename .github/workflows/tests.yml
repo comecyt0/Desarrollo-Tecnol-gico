@@ -1,0 +1,131 @@
+# Tests funcionales: backend Pest + frontend Vitest.
+# Complementa security-sast.yml (que sólo corre lint + SAST).
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  backend-tests:
+    name: Backend Pest/PHPUnit
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: comecyt_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP 8.2
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: pgsql, mbstring, xml, curl, zip, bcmath, gd, intl, sodium
+          coverage: xdebug
+          tools: composer:v2
+
+      - name: Cache Composer
+        uses: actions/cache@v4
+        with:
+          path: ~/.composer/cache/files
+          key: composer-${{ hashFiles('apps/api/composer.lock') }}
+
+      - name: Install dependencies
+        working-directory: apps/api
+        run: composer install --prefer-dist --no-progress --no-interaction
+
+      - name: Prepare environment
+        working-directory: apps/api
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          php artisan jwt:secret
+          # Override env for tests
+          {
+            echo "APP_ENV=testing"
+            echo "APP_DEBUG=true"
+            echo "DB_CONNECTION=pgsql"
+            echo "DB_HOST=127.0.0.1"
+            echo "DB_PORT=5432"
+            echo "DB_DATABASE=comecyt_test"
+            echo "DB_USERNAME=postgres"
+            echo "DB_PASSWORD=postgres"
+            echo "MAIL_MAILER=log"
+            echo "CORS_ALLOWED_ORIGINS=http://localhost:3000"
+            echo "HEALTH_TOKEN=test-only-not-prod"
+          } >> .env
+
+      - name: Run migrations
+        working-directory: apps/api
+        run: php artisan migrate --force
+
+      - name: Run tests
+        working-directory: apps/api
+        run: php artisan test --parallel --coverage --min=0 || php artisan test
+
+  frontend-tests:
+    name: Frontend Vitest
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install dependencies
+        working-directory: apps/web
+        run: npm ci --legacy-peer-deps
+
+      - name: Type check
+        working-directory: apps/web
+        run: npx tsc --noEmit
+
+      - name: Vitest
+        working-directory: apps/web
+        run: npx vitest run --reporter=verbose
+
+  frontend-build:
+    name: Frontend build (Next.js)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install dependencies
+        working-directory: apps/web
+        run: npm ci --legacy-peer-deps
+
+      - name: Build (webpack fallback)
+        working-directory: apps/web
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:8000/api
+          NEXT_PUBLIC_APP_URL: http://localhost:3000
+        run: npx next build --webpack

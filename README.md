@@ -1,317 +1,189 @@
 # 🚀 COMECYT — Gestión de Proyectos de Desarrollo Tecnológico y Vinculación
 
-**Status:** Producción ✅ | **Version:** 8.0 (post-auditoría seguridad) | **Date:** 2026-06-12
+![Status](https://img.shields.io/badge/status-producci%C3%B3n-green)
+![Version](https://img.shields.io/badge/version-8.0.0-blue)
+![PHP](https://img.shields.io/badge/PHP-8.2%2B-777BB4)
+![Laravel](https://img.shields.io/badge/Laravel-11.x-FF2D20)
+![Next.js](https://img.shields.io/badge/Next.js-16.x-000000)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18-336791)
+![Audited](https://img.shields.io/badge/security-auditado-success)
 
-Sistema institucional del COMECYT (Consejo Mexiquense de Ciencia y Tecnología) para administrar el ciclo completo de convocatorias de financiamiento: publicación, postulación, revisión, evaluación, convenio, ministración, seguimiento y cierre.
+Sistema institucional del **Consejo Mexiquense de Ciencia y Tecnología (COMECYT)** para administrar el ciclo completo de convocatorias de financiamiento a empresas y proyectos de desarrollo tecnológico:
+
+```
+publicación → postulación → revisión → evaluación → convenio → ministración → seguimiento → cierre
+```
 
 ---
 
 ## 📚 Documentación
 
-| Para... | Lee |
+| Tu objetivo | Lee |
 |---|---|
-| **Desplegar en un servidor nuevo** | [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) — guía completa 60–90 min |
-| **Administrar el sistema día a día** | [`docs/OPERATIONS.md`](docs/OPERATIONS.md) — manual de operación |
-| **Responder a un incidente de seguridad** | [`docs/security/incident-response.md`](docs/security/incident-response.md) — runbook IR + LFPDPPP |
-| **Entender la arquitectura** | [`docs/README.md`](docs/README.md) — índice + diagramas |
-| **Desarrollar (dev local)** | Resto de este README ⬇️ |
+| 🚀 **Instalar en un servidor nuevo** | [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) — guía completa 60–90 min |
+| 🛠️ **Operar el sistema día a día** | [`docs/OPERATIONS.md`](docs/OPERATIONS.md) — comandos, monitoreo, backups |
+| 👥 **Usar el sistema (por rol)** | [`docs/USER_GUIDE.md`](docs/USER_GUIDE.md) — admin, revisor, evaluador, solicitante |
+| 💻 **Desarrollar localmente** | [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md) — setup + workflow |
+| 🤝 **Contribuir con PRs** | [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md) — flujo + reglas |
+| 🏗️ **Entender la arquitectura** | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — decisiones técnicas |
+| 🗄️ **Ver el schema de la BD** | [`docs/DATABASE.md`](docs/DATABASE.md) — 38 tablas documentadas |
+| 🔌 **Consultar el API** | [`docs/API.md`](docs/API.md) — 126 endpoints |
+| 🧪 **Correr tests** | [`docs/TESTING.md`](docs/TESTING.md) — Pest, Vitest, Playwright |
+| 🔒 **Reportar vulnerabilidad** | [`docs/security/SECURITY.md`](docs/security/SECURITY.md) — política + cómo reportar |
+| 🚨 **Responder a un incidente** | [`docs/security/incident-response.md`](docs/security/incident-response.md) — runbook IR |
+| 📜 **Ver historial de versiones** | [`docs/CHANGELOG.md`](docs/CHANGELOG.md) — v1.0 → v8.0 |
+
+**Índice maestro:** [`docs/README.md`](docs/README.md)
 
 ---
 
 ## ⚡ Quick Start (DEV LOCAL)
 
-### Prerequisites
+> Para deploy en producción, ver [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
+
+### Prerequisitos
+
+- PHP 8.2+ con extensiones `pgsql`, `mbstring`, `sodium`
+- Composer 2.x
+- Node.js 20 LTS
+- PostgreSQL 18
+
+### Setup
+
 ```bash
-# Clone and setup
-git clone <repo>
-cd comecyt-system
+# 1. Clone
+git clone https://github.com/comecyt0/Desarrollo-Tecnol-gico.git comecyt
+cd comecyt
 
-# Install dependencies
-cd apps/api && composer install && cd ..
-cd apps/web && npm install && cd ..
+# 2. Base de datos local
+sudo -u postgres psql <<'SQL'
+CREATE USER comecyt WITH PASSWORD 'comecyt_dev_password';
+CREATE DATABASE comecyt_dev OWNER comecyt ENCODING 'UTF8';
+GRANT ALL PRIVILEGES ON DATABASE comecyt_dev TO comecyt;
+SQL
 
-# Configure environment
+# 3. Backend
 cd apps/api
 cp .env.example .env
+# Edita DB_PASSWORD, APP_ENV=local, APP_DEBUG=true
+composer install
 php artisan key:generate
-cd ..
-
-cd apps/web
-cp .env.example .env.local
-echo "NEXT_PUBLIC_API_URL=http://localhost:8000/api" >> .env.local
-cd ..
-```
-
-### Run Servers
-```bash
-# Terminal 1: Backend (port 8000)
-cd apps/api
+php artisan jwt:secret
+php artisan storage:link
 php artisan migrate --seed
-php artisan serve
 
-# Terminal 2: Frontend (port 3000)
-cd apps/web
-npm run dev
-
-# Browser: http://localhost:3000
+# 4. Frontend
+cd ../web
+cp .env.example .env.local
+# Edita NEXT_PUBLIC_API_URL=http://localhost:8000/api
+npm install --legacy-peer-deps
 ```
 
-### Test Login
-```
-Email: admin@comecyt.gob.mx
-Password: password123
-```
+### Arrancar (2 terminales)
 
----
-
-## 📚 Documentation
-
-| Document | Purpose |
-|----------|---------|
-| **CLAUDE.md** | Complete project memory, style guides, patterns, troubleshooting |
-| **INTEGRATION_TESTING.md** | Detailed testing scenarios for all 4 roles |
-| **MVP_COMPLETION_STATUS.md** | Current completeness status, metrics, known issues |
-| **MEMORY.md** | Auto-generated project context and decisions |
-
----
-
-## 🎯 What's Complete
-
-### ✅ Admin Workflow
-- 7-step wizard to create convocatorias with full configuration
-- Step 1: Convocatoria info (nombre, fechas, montos)
-- Step 2: Programa config (clave, tipo_apoyo, etapas)
-- Step 3: Campos dinámicos (CRUD table)
-- Step 4: Documentos requeridos (CRUD table)
-- Step 5: Rubros presupuestales (CRUD table)
-- Step 6: Criterios evaluación (CRUD table, ponderación 100%)
-- Step 7: Revisión y guardar (atomic save with 6 sequential API calls)
-
-### ✅ Solicitante Workflow
-- Create solicitud with dynamic formulario (campos del programa)
-- Equipo management (min/max validation)
-- Rubros presupuestales (sum ≤ máximo validation)
-- Upload documentos (PDF only, 5MB max, preview/download/delete)
-- Submit for review (2-layer validation: frontend blocks + backend validates)
-- Track solicitud estado (borrador → enviada → ...)
-
-### ✅ Revisor Workflow
-- Dashboard with stats (nuevos, en subsanación, urgentes)
-- Bandeja de pendientes (lista solicitudes enviadas)
-- View solicitud with documento preview/download
-- Generate observaciones (campo|tipo|comentario)
-- Approve (estado → en_evaluacion) or Observe (estado → observada)
-- Track solicitudes observadas (for subsanación)
-
-### ✅ Evaluador Workflow
-- Dashboard with stats (por evaluar, en evaluación, completadas)
-- Bandeja evaluaciones con búsqueda y filtrado
-- Rubrica con **dual-path scoring**:
-  - **Dynamic:** Variable N criterios from BD (actual program config)
-  - **Legacy:** Fallback 4 hardcoded fields (25 pts each)
-- Justificación comentarios (required textarea)
-- **Carta de Imparcialidad** (impartiality certification checkbox)
-- Auto-transition estado to 'evaluando' on open
-- Dictamen generation with score calculation
-- Solicitud estado auto-update (aprobada si ≥80, rechazada si <80)
-- Descargar Dictamen PDF
-- Histórico de evaluaciones completadas
-
-### ✅ Database & Backend
-- 25+ models with full relationships
-- 19 migrations with proper schema
-- 60+ API endpoints
-- JWT authentication
-- 4-role authorization (admin, revisor, evaluador, solicitante)
-- 2-layer validations (frontend + backend)
-- Dynamic programs 100% BD-driven
-- File storage with public disk access
-
-### ✅ Frontend & UI
-- 30+ pages across 4 role modules
-- 50+ reusable components
-- Responsive design (mobile-friendly)
-- Design token system (colorMap)
-- Shadcn UI components + Tailwind CSS v4
-- Theme context ready (dark mode)
-- Array validation guards on all pages
-- Promise.all() synchronization for parallel API calls
-
----
-
-## 🧪 Integration Testing
-
-**Ready to test all 4 workflows end-to-end.**
-
-### Test Scenarios Available
-See `INTEGRATION_TESTING.md` for detailed scenarios:
-1. **Admin:** Create full convocatoria with wizard ✅
-2. **Solicitante:** Submit request with documents ✅
-3. **Revisor:** Review and add observaciones ✅
-4. **Evaluador:** Score and generate dictamen ✅
-
-### Quick Test Checklist
 ```bash
-# 1. Admin creates convocatoria
-→ Login as admin@comecyt.gob.mx
-→ Go to Convocatorias > Nueva
-→ Complete all 7 steps
-→ Verify: TipoPrograma created, Convocatoria linked
+# Terminal 1
+cd apps/api && php artisan serve         # → http://localhost:8000
 
-# 2. Solicitante submits request
-→ Login as solicitante@institucion.mx
-→ Solicitudes > Nueva
-→ Select convocatoria, fill form, upload docs
-→ Verify: Solicitud in estado='enviada'
-
-# 3. Revisor reviews
-→ Login as asd@asd.com (revisor)
-→ Revisor > Bandeja
-→ Click solicitud, add observación
-→ Approve or Observe
-→ Verify: Solicitud estado changed
-
-# 4. Evaluador evaluates
-→ Login as evaluadorr@uaemex.mx
-→ Evaluador > Bandeja
-→ Click "Evaluar"
-→ Score criteria, accept impartiality, save
-→ Verify: Dictamen created, solicitud aprobada/rechazada
+# Terminal 2
+cd apps/web && npm run dev               # → http://localhost:3000
 ```
 
----
+### Login de prueba (solo dev local)
 
-## 🔧 Stack
-
-| Layer | Technology |
-|-------|-----------|
-| Frontend | Next.js 14 + React 18 + TypeScript |
-| Backend | Laravel 11 (API-only) |
-| Database | PostgreSQL 18 |
-| Auth | JWT (tymon/jwt-auth) |
-| UI Library | Shadcn UI v3 + Tailwind CSS v4 |
-| Storage | Local filesystem (public disk) |
-
----
-
-## 📊 Metrics
-
-| Metric | Value |
-|--------|-------|
-| Routes | 60+ |
-| Models | 25+ |
-| Controllers | 15+ |
-| Migrations | 19 |
-| Pages | 30+ |
-| Components | 50+ |
-| Database Tables | 25+ |
-| Test Users | 4 (all roles) |
-| Real Convocatorias | 5 (PFPI, PROT, IPFE, VINC, EMP) |
-
----
-
-## 🎓 Architecture Highlights
-
-### Dual-Path Evaluation
-Backend supports both:
-- **Dynamic:** Criterios from `programa_criterios_evaluacion` table
-- **Legacy:** Hardcoded 4 fields (25 pts each) for backward compatibility
-
-### 2-Layer Validation (GOLD RULE)
-```
-Frontend (UX)          Backend (Security)
-├─ Block early       └─ Validate late
-├─ Show errors       └─ 422 if invalid
-└─ User feedback      └─ Prevent bad data
-```
-
-### Array Validation Pattern (UNIVERSAL)
-```typescript
-// ALWAYS use this pattern to prevent "undefined is not an object"
-const items = Array.isArray(data) ? data : [];
-```
-
-### Dynamic Programs (100% BD-Driven)
-- No hardcoded fields per program
-- Admin configures via UI
-- Solicitantes see programa-specific forms
-- Evaluadores score programa-specific criteria
-
----
-
-## 🚀 What's Next (Post-MVP)
-
-### High Priority
-- [ ] Test all 4 workflows end-to-end
-- [ ] Fix any bugs found during testing
-- [ ] Performance optimization
-
-### Medium Priority
-- [ ] Convenio document generation UI
-- [ ] Ministración workflow UI
-- [ ] Enhanced reporting
-
-### Low Priority
-- [ ] API documentation (Swagger)
-- [ ] Mobile app optimization
-- [ ] Advanced analytics
-
----
-
-## 🐛 Troubleshooting
-
-### Common Issues
-
-**"API connection refused"**
-→ Make sure backend is running: `php artisan serve`
-
-**"TypeError: X.map is not a function"**
-→ Missing `Array.isArray()` guard. Check CLAUDE.md §Array Validation
-
-**"Document 403 Forbidden"**
-→ Storage disk issue. Check CLAUDE.md §Storage Disks pattern
-
-**"Estado didn't update"**
-→ Check backend validations, state transition logic. See INTEGRATION_TESTING.md
-
-### More Help
-- **CLAUDE.md** → Patterns, style guides, known errors
-- **MEMORY.md** → Technical decisions, architecture context
-- **INTEGRATION_TESTING.md** → Red flags and edge cases
-
----
-
-## 👥 User Accounts
-
-| Role | Email | Password |
+| Rol | Email | Password |
 |------|-------|----------|
-| Admin | admin@comecyt.gob.mx | password123 |
-| Revisor | asd@asd.com | password123 |
-| Evaluador | evaluadorr@uaemex.mx | password123 |
-| Solicitante | solicitante@institucion.mx | password123 |
+| Admin | `admin@comecyt.gob.mx` | `password123` |
+| Revisor | `asd@asd.com` | `password123` |
+| Evaluador | `evaluadorr@uaemex.mx` | `password123` |
+| Solicitante | `solicitante@institucion.mx` | `password123` |
+
+> ⚠️ Estos usuarios **NO se crean en producción** — el seeder `UsuariosPruebaSeeder` se omite automáticamente cuando `APP_ENV=production`.
 
 ---
 
-## 📋 License & Notes
+## 🏗️ Stack
 
-**Development Status:** MVP Complete - Production Ready
-**Last Updated:** April 6, 2026 - 10:35
-**Version:** 2.9
+| Capa | Tecnología |
+|---|---|
+| Frontend | Next.js 16 (App Router) + React 19 + TypeScript |
+| Backend | Laravel 11 (API-only) |
+| BD | PostgreSQL 18 |
+| Estilos | Tailwind v4 + Shadcn UI v3 |
+| Auth | JWT HS256 en HttpOnly cookie + 2FA TOTP |
+| Real-time | Laravel Reverb (WebSocket) |
+| Hashing | Argon2id |
+| Hosting | nginx + php-fpm + Supervisor (bare-metal) |
+| CI/CD | GitHub Actions (Semgrep, Gitleaks, Dependabot, SBOM) |
 
----
-
-## 🎯 Getting Started
-
-1. **Read This File** ← You are here
-2. **Read INTEGRATION_TESTING.md** ← Next: understand what to test
-3. **Run Quick Start** ← Get servers running
-4. **Test Admin Workflow** ← Scenario 1
-5. **Test Other Workflows** ← Scenarios 2-4
-
-**Questions?** Check CLAUDE.md or MEMORY.md
-
-**Ready to test?** Follow INTEGRATION_TESTING.md section by section.
+Detalles en [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 ---
 
-**Status: MVP COMPLETE AND READY FOR TESTING** ✅
+## 🛡️ Seguridad
+
+Sistema auditado con la skill `ciberseguridad-auditor-integral v2.0`:
+
+- ✅ 17 modelos endurecidos contra mass-assignment
+- ✅ Rate limiting de 5 capas (IP, email, global, endpoint, gateway DDoS)
+- ✅ CSP estricto + HSTS + headers seguros
+- ✅ CORS estricto en producción (fail-fast en deploy)
+- ✅ PII scrubbing en Sentry (LFPDPPP-compliant)
+- ✅ File upload con validación MIME real (finfo)
+- ✅ Allowlist de hostnames para imágenes (anti-SSRF)
+- ✅ Dependabot + Semgrep + Gitleaks en CI
+- ✅ SBOM (CycloneDX + SPDX) por release
+- ✅ Runbook IR + plan de rotación de secretos
+
+Para reportar vulnerabilidades: [`docs/security/SECURITY.md`](docs/security/SECURITY.md).
+
+---
+
+## 📊 Métricas del repo
+
+| Métrica | Valor |
+|---|---|
+| Modelos Eloquent | 36 |
+| Controllers | 20 |
+| Migraciones | 59 |
+| Endpoints | 126 |
+| Workflows CI | 4 (tests, security-sast, sbom-release, release) |
+| Documentación | ~4,500 líneas en 14 archivos |
+
+---
+
+## 📋 Licencia
+
+Software propiedad institucional del **Consejo Mexiquense de Ciencia y Tecnología (COMECYT)**, organismo público descentralizado del Gobierno del Estado de México. Ver [`LICENSE`](LICENSE).
+
+Usos permitidos limitados a operación institucional, auditoría autorizada y estudios académicos sin fines de lucro previa autorización.
+
+---
+
+## 🤝 Contribuir
+
+Lee [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md) antes de enviar tu primer PR.
+
+Resumen:
+1. Conventional Commits (`feat:`, `fix:`, `sec:`, `chore:`, `docs:`)
+2. PRs pequeños (< 500 líneas idealmente)
+3. Tests para el código nuevo
+4. CI debe pasar antes del merge
+5. Code review obligatorio
+
+---
+
+## 📞 Contacto
+
+- **Bugs / features:** [GitHub Issues](https://github.com/comecyt0/Desarrollo-Tecnol-gico/issues)
+- **Soporte general:** soporte@comecyt.gob.mx
+- **Vulnerabilidades de seguridad:** ver [`SECURITY.md`](docs/security/SECURITY.md) (NO Issues públicos)
+- **Datos personales / LFPDPPP:** Unidad de Transparencia COMECYT
+
+---
+
+<sub>
+**Versión:** 8.0.0 — 2026-06-12<br>
+**Estado:** Producción ready, auditado, documentado<br>
+**Próxima revisión obligatoria:** 2026-12-12 (semestral)
+</sub>

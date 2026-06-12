@@ -1,0 +1,56 @@
+name: ✨ Solicitud de feature
+description: Propón una mejora o funcionalidad nueva.
+labels: ["enhancement", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Gracias por proponer una mejora. Cuanto más concreta sea la propuesta, mejor podemos evaluarla.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: ¿Qué problema resuelve?
+      description: Describe el problema o necesidad que motiva esta feature.
+      placeholder: Como [rol], necesito [hacer X] para [lograr Y]. Actualmente no se puede / es difícil porque [...].
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Solución propuesta
+      description: Cómo te imaginas que funcionaría.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternativas consideradas
+      description: ¿Hay otras formas de resolverlo? ¿Por qué prefieres ésta?
+
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Alcance estimado
+      options:
+        - Pequeño (cambio puntual)
+        - Mediano (varios archivos)
+        - Grande (módulo nuevo)
+        - No sé estimar
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Prioridad (desde tu perspectiva)
+      options:
+        - Baja — Nice to have
+        - Media — Mejora importante
+        - Alta — Bloqueante para mi trabajo
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Contexto adicional
+      description: Mockups, ejemplos de otros sistemas, links relevantes.

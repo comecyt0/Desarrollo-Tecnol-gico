@@ -1,0 +1,104 @@
+name: 🐛 Reporte de bug
+description: Reporta un bug en el sistema COMECYT.
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Gracias por reportar un bug. Por favor proporciona toda la información posible.
+
+        ⚠️ **¿Es una vulnerabilidad de seguridad?**
+        NO la reportes aquí. Sigue el flujo de [SECURITY.md](https://github.com/comecyt0/Desarrollo-Tecnol-gico/blob/main/docs/security/SECURITY.md).
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Descripción del bug
+      description: Una descripción clara y concisa de qué está pasando.
+      placeholder: Cuando hago click en X, aparece Y en vez de Z.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Pasos para reproducir
+      description: Pasos numerados para reproducir el bug.
+      value: |
+        1. Ir a '...'
+        2. Click en '...'
+        3. Llenar el formulario con '...'
+        4. Click en 'Enviar'
+        5. Ver el error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Comportamiento esperado
+      description: Qué debería pasar.
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Comportamiento actual
+      description: Qué pasa en realidad.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: role
+    attributes:
+      label: Rol del usuario afectado
+      options:
+        - Solicitante (empresa)
+        - Revisor documental
+        - Evaluador técnico
+        - Administrador
+        - N/A (no aplica un rol específico)
+    validations:
+      required: true
+
+  - type: input
+    id: browser
+    attributes:
+      label: Navegador y versión
+      placeholder: Chrome 130, Safari 17, Firefox 124, etc.
+
+  - type: input
+    id: device
+    attributes:
+      label: Dispositivo / OS
+      placeholder: macOS 14, Windows 11, iPhone 15, etc.
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Capturas de pantalla
+      description: Pega capturas o videos que ayuden a entender el problema (sin datos personales).
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / errores en consola
+      description: Errores en la consola del navegador (F12), o stack traces si tienes acceso a los logs.
+      render: text
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Contexto adicional
+      description: Cualquier otra información relevante.
+
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Confirmación
+      options:
+        - label: He revisado los issues existentes y no encontré uno similar.
+          required: true
+        - label: Confirmo que NO incluí datos personales reales en este reporte.
+          required: true

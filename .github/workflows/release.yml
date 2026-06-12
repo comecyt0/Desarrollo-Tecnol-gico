@@ -1,0 +1,160 @@
+# Workflow para releases con tag semántico (vX.Y.Z).
+# Genera changelog desde commits Conventional Commits y crea el GitHub Release.
+# Después del release, sbom-release.yml se dispara automáticamente.
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+-*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Crear GitHub Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # full history para generar changelog
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/}
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "version_no_v=${VERSION#v}" >> $GITHUB_OUTPUT
+
+      - name: Get previous tag
+        id: prev
+        run: |
+          PREV_TAG=$(git tag --sort=-v:refname | grep -v "${GITHUB_REF#refs/tags/}" | head -1)
+          echo "prev_tag=${PREV_TAG}" >> $GITHUB_OUTPUT
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          echo "## ${{ steps.version.outputs.version }}" > release_notes.md
+          echo "" >> release_notes.md
+          echo "_Release fecha: $(date +%Y-%m-%d)_" >> release_notes.md
+          echo "" >> release_notes.md
+
+          if [ -n "${{ steps.prev.outputs.prev_tag }}" ]; then
+            RANGE="${{ steps.prev.outputs.prev_tag }}..HEAD"
+            echo "Cambios desde \`${{ steps.prev.outputs.prev_tag }}\`:" >> release_notes.md
+          else
+            RANGE="HEAD"
+            echo "Primer release." >> release_notes.md
+          fi
+
+          echo "" >> release_notes.md
+          echo "### ✨ Features" >> release_notes.md
+          git log $RANGE --pretty=format:"- %s (%h)" --grep="^feat" || true >> release_notes.md
+          echo "" >> release_notes.md
+          echo "" >> release_notes.md
+
+          echo "### 🔒 Seguridad" >> release_notes.md
+          git log $RANGE --pretty=format:"- %s (%h)" --grep="^sec" || true >> release_notes.md
+          echo "" >> release_notes.md
+          echo "" >> release_notes.md
+
+          echo "### 🐛 Bug fixes" >> release_notes.md
+          git log $RANGE --pretty=format:"- %s (%h)" --grep="^fix" || true >> release_notes.md
+          echo "" >> release_notes.md
+          echo "" >> release_notes.md
+
+          echo "### 📚 Documentación" >> release_notes.md
+          git log $RANGE --pretty=format:"- %s (%h)" --grep="^docs" || true >> release_notes.md
+          echo "" >> release_notes.md
+          echo "" >> release_notes.md
+
+          echo "### 🛠️ Mantenimiento" >> release_notes.md
+          git log $RANGE --pretty=format:"- %s (%h)" --grep="^chore\|^refactor" || true >> release_notes.md
+          echo "" >> release_notes.md
+
+          echo "" >> release_notes.md
+          echo "---" >> release_notes.md
+          echo "" >> release_notes.md
+          echo "### 📦 Instalación" >> release_notes.md
+          echo "Ver [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)." >> release_notes.md
+          echo "" >> release_notes.md
+          echo "### 📋 SBOM" >> release_notes.md
+          echo "Los archivos SBOM (\`sbom-api.cdx.json\`, \`sbom-web.spdx.json\`, \`sbom-web.cdx.json\`) se adjuntan automáticamente vía workflow \`sbom-release.yml\`." >> release_notes.md
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          name: ${{ steps.version.outputs.version }}
+          body_path: release_notes.md
+          draft: false
+          prerelease: ${{ contains(steps.version.outputs.version, '-') }}
+
+  notify-deploy-checklist:
+    name: Crear issue de checklist post-release
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Crear issue de seguimiento
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const version = '${{ github.ref_name }}';
+            const issueBody = `## Checklist de despliegue para \`${version}\`
+
+            ### Antes del deploy
+            - [ ] Revisar el changelog del release ${version}
+            - [ ] Verificar que CI pasó (security-sast.yml, tests.yml)
+            - [ ] Confirmar que el SBOM se adjuntó al release
+            - [ ] Notificar a stakeholders si hay breaking changes
+
+            ### Backup pre-deploy
+            - [ ] Backup completo de la BD: \`sudo -u postgres pg_dump comecyt_prod | gzip > /backup/pre-${version}.sql.gz\`
+            - [ ] Backup de storage: \`sudo tar -czf /backup/storage-pre-${version}.tar.gz storage/app/public/\`
+
+            ### Deploy
+            - [ ] SSH al servidor de producción
+            - [ ] \`cd /var/www/comecyt\`
+            - [ ] \`sudo -u www-data git pull origin main\`
+            - [ ] \`cd apps/api && sudo -u www-data composer install --no-dev --optimize-autoloader\`
+            - [ ] \`sudo -u www-data php artisan migrate --force\`
+            - [ ] \`sudo bash deploy.sh\`
+            - [ ] \`cd ../web && sudo -u www-data npm ci --legacy-peer-deps && sudo -u www-data npm run build\`
+            - [ ] Restart servicios:
+                  \`sudo supervisorctl restart comecyt-next comecyt-reverb comecyt-queue:*\`
+                  \`sudo systemctl reload php8.2-fpm\`
+                  \`sudo systemctl reload nginx\`
+
+            ### Verificación post-deploy
+            - [ ] \`sudo -u www-data php artisan app:deploy-check\` — debe dar 0 errores
+            - [ ] \`curl -H "X-Health-Token: ..." https://dominio.gob.mx/api/health\` — debe responder 200
+            - [ ] Login funcional (admin + un solicitante)
+            - [ ] Carga de página principal (verificar CSP en consola)
+            - [ ] Notificación push de prueba (Reverb)
+            - [ ] Subida de archivo de prueba (storage)
+
+            ### Si algo falla — rollback
+            - [ ] \`git checkout <tag-anterior>\`
+            - [ ] \`composer install --no-dev\`
+            - [ ] \`php artisan migrate:rollback\` (si hubo migrations nuevas)
+            - [ ] \`bash deploy.sh\`
+
+            ### Cerrar este issue cuando:
+            - [ ] Sistema funcional en producción durante ≥ 24h
+            - [ ] Sin alertas críticas
+            - [ ] Métricas dentro de KPIs (\`docs/OPERATIONS.md §11\`)
+            `;
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `🚀 Deploy: ${version}`,
+              body: issueBody,
+              labels: ['deploy', 'tracking'],
+            });
