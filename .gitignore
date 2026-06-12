@@ -6,6 +6,9 @@
 # Claude Code workspace (local)
 .claude/
 CLAUDE.local.md
+.mcp.json
+_agents/
+STITCH_SETUP.md
 
 # Drafts y recursos sueltos no versionables
 untitled folder/
