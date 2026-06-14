@@ -1,7 +1,7 @@
 # 🚀 COMECYT — Gestión de Proyectos de Desarrollo Tecnológico y Vinculación
 
 ![Status](https://img.shields.io/badge/status-producci%C3%B3n-green)
-![Version](https://img.shields.io/badge/version-8.0.0-blue)
+![Version](https://img.shields.io/badge/version-8.1.0-blue)
 ![PHP](https://img.shields.io/badge/PHP-8.2%2B-777BB4)
 ![Laravel](https://img.shields.io/badge/Laravel-11.x-FF2D20)
 ![Next.js](https://img.shields.io/badge/Next.js-16.x-000000)
@@ -31,7 +31,9 @@ publicación → postulación → revisión → evaluación → convenio → min
 | 🧪 **Correr tests** | [`docs/TESTING.md`](docs/TESTING.md) — Pest, Vitest, Playwright |
 | 🔒 **Reportar vulnerabilidad** | [`docs/security/SECURITY.md`](docs/security/SECURITY.md) — política + cómo reportar |
 | 🚨 **Responder a un incidente** | [`docs/security/incident-response.md`](docs/security/incident-response.md) — runbook IR |
-| 📜 **Ver historial de versiones** | [`docs/CHANGELOG.md`](docs/CHANGELOG.md) — v1.0 → v8.0 |
+| 📜 **Ver historial de versiones** | [`docs/CHANGELOG.md`](docs/CHANGELOG.md) — v1.0 → v8.1 |
+| ✅ **Terminar el deploy (TIC)** | [`docs/NEXT_STEPS.md`](docs/NEXT_STEPS.md) — checklist con tiempos |
+| 📊 **Resumen ejecutivo de la auditoría** | [`docs/POST_AUDIT_SUMMARY.md`](docs/POST_AUDIT_SUMMARY.md) |
 
 **Índice maestro:** [`docs/README.md`](docs/README.md)
 
@@ -183,7 +185,7 @@ Resumen:
 ---
 
 <sub>
-**Versión:** 8.0.0 — 2026-06-12<br>
-**Estado:** Producción ready, auditado, documentado<br>
-**Próxima revisión obligatoria:** 2026-12-12 (semestral)
+**Versión:** 8.1.0 — 2026-06-14<br>
+**Estado:** Producción ready, auditado, documentado, CI/CD completo, aspectos legales preparados<br>
+**Próxima revisión obligatoria:** 2026-12-14 (semestral)
 </sub>

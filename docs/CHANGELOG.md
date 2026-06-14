@@ -7,6 +7,40 @@ Versionado según [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [8.1.0] — 2026-06-14 (cierre operativo)
+
+### CI/CD
+- **`.github/workflows/tests.yml`**: Pest backend (con servicio PostgreSQL 18) + Vitest + TypeScript check + Next build con webpack
+- **`.github/workflows/release.yml`**: Tag `vX.Y.Z` genera GitHub Release con changelog por categoría (feat/sec/fix/docs/chore) + abre issue de deploy checklist automáticamente
+
+### GitHub project hygiene
+- **`.github/CODEOWNERS`**: Auto-asignación de reviewers; rutas sensibles (middleware, auth, env, deploy) requieren revisión específica
+- **`.github/ISSUE_TEMPLATE/`**: Forms estructurados (bug_report, feature_request) + `config.yml` que bloquea issues en blanco y redirige reportes de seguridad a SECURITY.md
+- **`.github/pull_request_template.md`**: Checklist completo del autor (commits, tests, docs, lint)
+
+### Legal e institucional
+- **`LICENSE`**: Licencia de Uso Institucional COMECYT (8 secciones: propiedad intelectual, usos permitidos/prohibidos, componentes de terceros, cumplimiento LFPDPPP/LGPDPPSO, exención de garantías, jurisdicción mexicana)
+- **`apps/web/src/app/(legal)/privacidad/page.tsx`**: Aviso de Privacidad Integral LFPDPPP (10 secciones, plantilla técnica pendiente de aprobación por Unidad de Transparencia)
+- **`apps/web/src/app/(legal)/terminos/page.tsx`**: Términos y Condiciones de Uso (13 secciones, plantilla pendiente de aprobación jurídica)
+- Ambas páginas servidas como estáticas (○) por Next.js, fuera de la auth
+
+### Developer Experience
+- **`.gitattributes`**: Normalización LF universal, binarios marcados, export-ignore para `git archive`, linguist-language overrides
+- **`.editorconfig`**: 4 spaces PHP, 2 spaces TS/JS/CSS/MD, LF universal, UTF-8 — consistencia entre editores
+- **`README.md` raíz reescrito**: Navegación por audiencia con tabla de documentación, badges de stack (PHP/Laravel/Next/PostgreSQL/Audited), Quick Start dev separado de DEPLOYMENT.md, métricas reales del repo
+
+### Documentación
+- **`docs/NEXT_STEPS.md`**: Checklist accionable para el TIC con 6 bloques (urgente / importante / deploy / post-deploy / primer mes / limpieza local) y comandos exactos
+- **`docs/POST_AUDIT_SUMMARY.md`**: Resumen ejecutivo de la sesión 2026-06-09 → 2026-06-14 con métricas antes/después, decisiones técnicas, errores históricos y lecciones
+
+### Verificación
+- ESLint: 0 errores
+- Vitest: 96/96 tests
+- Next build (webpack): 23 páginas estáticas (incluye /privacidad y /terminos)
+- PHP lint: 0 errores en 36 modelos
+
+---
+
 ## [8.0.0] — 2026-06-12
 
 ### Seguridad (✨ post-auditoría completa)

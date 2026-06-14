@@ -32,6 +32,12 @@ Sistema de Gestión de Proyectos de Desarrollo Tecnológico y Vinculación.
 ### Quiero ver qué cambió en cada versión
 → **[CHANGELOG.md](CHANGELOG.md)** — Historial de versiones
 
+### Soy el TIC y necesito saber **qué falta hacer** para terminar el despliegue
+→ **[NEXT_STEPS.md](NEXT_STEPS.md)** — Checklist accionable con tiempos estimados
+
+### Necesito el **resumen ejecutivo** de la auditoría de seguridad
+→ **[POST_AUDIT_SUMMARY.md](POST_AUDIT_SUMMARY.md)** — Métricas antes/después + decisiones técnicas
+
 ---
 
 ## 📂 Mapa completo de archivos
@@ -52,7 +58,9 @@ docs/
 ├── 🤝 CONTRIBUTING.md              ← Cómo contribuir
 ├── 🧪 TESTING.md                   ← Tests
 │
-├── 📜 CHANGELOG.md                 ← Versiones
+├── 📜 CHANGELOG.md                 ← Versiones 1.0 → 8.1
+├── ✅ NEXT_STEPS.md                 ← Checklist para terminar deploy
+├── 📊 POST_AUDIT_SUMMARY.md         ← Resumen ejecutivo de la auditoría
 │
 ├── 🔒 security/
 │   ├── SECURITY.md                 ← Política + cómo reportar vulns
@@ -216,7 +224,7 @@ Ver detalle de cada uno en `CLAUDE.md` sección "Errores Documentados".
 
 ## 📅 Versión actual
 
-**8.0.0** — 2026-06-12 — Post-auditoría de seguridad completa. Ver [`CHANGELOG.md`](CHANGELOG.md).
+**8.1.0** — 2026-06-14 — Cierre operativo: CI/CD + LICENSE + páginas legales + DX completo. Ver [`CHANGELOG.md`](CHANGELOG.md).
 
 ---
 
