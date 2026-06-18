@@ -6,8 +6,12 @@ Sistema de Gestión de Proyectos de Desarrollo Tecnológico y Vinculación.
 
 ## 🧭 Por dónde empezar
 
-### Soy administrador de TIC y voy a **instalar el sistema en un servidor nuevo**
+### Soy administrador de TIC y voy a **instalar el sistema en un Linux nuevo**
 → **[DEPLOYMENT.md](DEPLOYMENT.md)** — Guía completa de despliegue (60-90 min) + [`deploy-templates/`](deploy-templates/) con confs listas para copiar
+→ **[`bootstrap.sh`](../bootstrap.sh)** — Script interactivo automatizado
+
+### Voy a instalar en **Windows Server 2022** (sin WSL)
+→ **`docs/WINDOWS_DEPLOYMENT.md`** (branch `windows-deployment`, pendiente de merge a main) — IIS+ARR+NSSM, ruta nativa Windows
 
 ### Soy administrador y voy a **operar el sistema día a día**
 → **[OPERATIONS.md](OPERATIONS.md)** — Comandos artisan, backups, troubleshooting, monitoreo
@@ -58,9 +62,10 @@ docs/
 ├── 🤝 CONTRIBUTING.md              ← Cómo contribuir
 ├── 🧪 TESTING.md                   ← Tests
 │
-├── 📜 CHANGELOG.md                 ← Versiones 1.0 → 8.1
+├── 📜 CHANGELOG.md                 ← Versiones 1.0 → 8.2
 ├── ✅ NEXT_STEPS.md                 ← Checklist para terminar deploy
 ├── 📊 POST_AUDIT_SUMMARY.md         ← Resumen ejecutivo de la auditoría
+├── 🏁 SESSION_2026-06-18_CLOSURE.md ← Cierre formal de sesión + estado deploy
 │
 ├── 🔒 security/
 │   ├── SECURITY.md                 ← Política + cómo reportar vulns
@@ -224,7 +229,7 @@ Ver detalle de cada uno en `CLAUDE.md` sección "Errores Documentados".
 
 ## 📅 Versión actual
 
-**8.1.0** — 2026-06-14 — Cierre operativo: CI/CD + LICENSE + páginas legales + DX completo. Ver [`CHANGELOG.md`](CHANGELOG.md).
+**8.2.0** — 2026-06-18 — ✅ DESPLEGADO en Windows Server 2022 (IIS+ARR+NSSM). Esperando DNS+SMTP externos. Ver [`CHANGELOG.md`](CHANGELOG.md) y [`SESSION_2026-06-18_CLOSURE.md`](SESSION_2026-06-18_CLOSURE.md).
 
 ---
 

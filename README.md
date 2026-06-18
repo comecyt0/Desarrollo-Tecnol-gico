@@ -1,7 +1,7 @@
 # 🚀 COMECYT — Gestión de Proyectos de Desarrollo Tecnológico y Vinculación
 
-![Status](https://img.shields.io/badge/status-producci%C3%B3n-green)
-![Version](https://img.shields.io/badge/version-8.1.0-blue)
+![Status](https://img.shields.io/badge/status-desplegado-success)
+![Version](https://img.shields.io/badge/version-8.2.0-blue)
 ![PHP](https://img.shields.io/badge/PHP-8.2%2B-777BB4)
 ![Laravel](https://img.shields.io/badge/Laravel-11.x-FF2D20)
 ![Next.js](https://img.shields.io/badge/Next.js-16.x-000000)
@@ -20,7 +20,8 @@ publicación → postulación → revisión → evaluación → convenio → min
 
 | Tu objetivo | Lee |
 |---|---|
-| 🚀 **Instalar en un servidor nuevo** | [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) — guía completa 60–90 min |
+| 🚀 **Instalar en servidor Linux nuevo** | [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) — guía completa 60–90 min + `bootstrap.sh` |
+| 🪟 **Instalar en Windows Server** | `docs/WINDOWS_DEPLOYMENT.md` (branch `windows-deployment`) — IIS+ARR sin WSL |
 | 🛠️ **Operar el sistema día a día** | [`docs/OPERATIONS.md`](docs/OPERATIONS.md) — comandos, monitoreo, backups |
 | 👥 **Usar el sistema (por rol)** | [`docs/USER_GUIDE.md`](docs/USER_GUIDE.md) — admin, revisor, evaluador, solicitante |
 | 💻 **Desarrollar localmente** | [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md) — setup + workflow |
@@ -185,7 +186,7 @@ Resumen:
 ---
 
 <sub>
-**Versión:** 8.1.0 — 2026-06-14<br>
-**Estado:** Producción ready, auditado, documentado, CI/CD completo, aspectos legales preparados<br>
-**Próxima revisión obligatoria:** 2026-12-14 (semestral)
+**Versión:** 8.2.0 — 2026-06-18<br>
+**Estado:** ✅ DESPLEGADO en Windows Server 2022 (IIS+ARR). Sistema funcionando intra-server. Esperando DNS público (Infra) + SMTP (TIC) para apertura al público.<br>
+**Próxima revisión obligatoria:** 2026-12-18 (semestral)
 </sub>

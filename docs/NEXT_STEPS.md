@@ -1,8 +1,35 @@
 # 📋 Próximos pasos para tener el sistema 100% en producción
 
-> **Audiencia:** Líder TIC del COMECYT que va a operar el deploy.
-> **Estado del repo al cierre de la sesión 2026-06-14:** Todo el código + documentación + auditoría de seguridad + workflows CI están en `github.com/comecyt0/Desarrollo-Tecnol-gico`. **Falta sólo lo que requiere acción humana en consolas externas.**
-> **Tiempo total estimado:** 2-4 horas para tener todo en marcha (90 min de los cuales son el deploy).
+> **Audiencia:** Líder TIC del COMECYT.
+> **Estado al 2026-06-18:** ✅ Sistema DESPLEGADO en Windows Server 2022 IIS+ARR. Funciona dentro del server. Solo faltan 2 dependencias externas (DNS de Infra + SMTP de TIC).
+> **Tiempo restante estimado:** 30 min de acción del usuario + tiempo de respuesta de Infra/TIC.
+
+## ⚡ ESTADO ACTUAL
+
+```
+✅ Auditoría de seguridad completa
+✅ Documentación exhaustiva (~6,500 líneas)
+✅ CI/CD operativo
+✅ Repo en GitHub con histórico limpio
+✅ Bootstrap.sh para Linux (Ubuntu)
+✅ DEPLOY HECHO en Windows Server 2022 (IIS+ARR+NSSM)
+✅ Backups PostgreSQL automatizados
+✅ 2FA admin activo
+✅ Healthcheck funcional
+✅ WebSocket Reverb funcional (directo + vía IIS+ARR)
+
+⏳ FALTA del usuario (HOY, ~30 min):
+   - Push + Merge del branch `windows-deployment` a main
+   - Mandar 2 correos institucionales (Infra + TIC)
+   - Respaldar y borrar SECRETS_GENERADOS.txt
+   - Revocar PAT temporal
+
+⏳ FALTA externamente (1-3 días hábiles):
+   - DNS público + IP + puertos 80/443 (Infra)
+   - SMTP institucional (TIC)
+```
+
+---
 
 ---
 

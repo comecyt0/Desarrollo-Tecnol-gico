@@ -7,6 +7,66 @@ Versionado según [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [8.2.0] — 2026-06-18 (despliegue en producción — Windows Server 2022)
+
+### Despliegue real en producción
+
+Primera vez que el sistema está corriendo en un servidor de producción institucional.
+Despliegue NATIVO en **Windows Server 2022** sin requerir WSL2 ni VM Linux.
+
+#### Stack nativo Windows desplegado
+- **PHP 8.2** vía equivalente Windows
+- **IIS** como reverse-proxy (en lugar de nginx)
+- **Application Request Routing (ARR)** + **URL Rewrite** para proxy a backend
+- **PostgreSQL 18** Windows installer
+- **NSSM** (Non-Sucking Service Manager) para servicios persistentes (en lugar de supervisor)
+- **win-acme** preparado para SSL Let's Encrypt (cuando llegue DNS)
+
+#### Componentes verificados funcionando
+- `php artisan app:deploy-check` verde
+- Login real con JWT en cookie HttpOnly + cookie domain
+- **2FA TOTP** activado en cuenta admin + códigos de recuperación
+- `/api/health` responde 200 con `X-Health-Token`
+- Reverb WebSocket **directo** funcional (pusher:connection_established)
+- Reverb WebSocket **vía IIS+ARR (wss://)** funcional tras fix de `<webSocket enabled="true" />`
+- Backups automáticos PostgreSQL (tarea programada, 02:00 diario, retención 14 días, dump real verificado)
+- Firewall Windows: regla `COMECYT-Web-In` activa para puertos 80/443 inbound
+- Tope IIS de subida elevado a 50 MB (coincide con PHP)
+- Permisos de `pgpass.conf` blindados (solo SYSTEM/Administrators)
+- VAPID keys generadas para Web Push API
+
+#### Documentación generada en despliegue
+- **`docs/WINDOWS_DEPLOYMENT.md`** (+352 líneas) en branch `windows-deployment`
+  - §13 — **WebSocket vía IIS+ARR** (síntoma 500, aislamiento, causa, fix, verificación)
+  - Tabla de errores W1-W10 con causa/solución documentada
+- **`apps/api/public/web.config`** con:
+  - `<webSocket enabled="true" />` bajo `<system.webServer>`
+  - Regla URL Rewrite `Reverb-WebSocket` para `/app/*` → `127.0.0.1:8080` con server variables `HTTP_X_FORWARDED_FOR`, `HTTP_X_FORWARDED_PROTO`, `HTTP_X_FORWARDED_HOST`
+- **`emitir-cert-letsencrypt.ps1`** — script win-acme listo para correr cuando llegue DNS
+
+### Operacional
+- Claude Code instalado en el servidor para deploy in-situ (mejor que pasar screenshots)
+- Branch `windows-deployment` en GitHub con commit `b2388c9` pendiente de merge a `main`
+
+### Dependencias externas pendientes (NO bloqueantes técnicamente, sí para apertura pública)
+- 🔴 **DNS + IP pública** (Infra COMECYT) — bloquea acceso público
+- 🔴 **Apertura puertos 80/443** al internet (Infra) — bloquea acceso público
+- 🟡 **SMTP institucional** (TIC) — bloquea emails de recovery/notificaciones
+
+Mientras se espera, el sistema es accesible **solo dentro del server** vía truco del archivo `hosts`.
+
+### Lecciones documentadas
+- Sin WSL2/Hyper-V disponible, la ruta nativa Windows es viable pero requiere stack distinto
+- El clasificador de seguridad de Claude Code correctamente bloqueó extracción de credenciales de env vars (patrón de prompt injection)
+- Tener Claude Code corriendo en el server durante deploy es clave para troubleshooting en vivo
+
+### Verificación
+- Sistema corriendo en https://apoyoempresarial-comecyt.gob.mx (solo intra-server por ahora)
+- 3 PATs de GitHub rotados durante la sesión (exposición controlada, revocados)
+- SHA `b2388c9` en branch `windows-deployment` listo para merge a main
+
+---
+
 ## [8.1.0] — 2026-06-14 (cierre operativo)
 
 ### CI/CD
