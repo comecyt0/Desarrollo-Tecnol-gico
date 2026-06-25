@@ -1,4 +1,4 @@
-# 📜 Changelog — COMECYT
+﻿# 📜 Changelog — COMECYT
 
 Todos los cambios significativos del sistema se documentan aquí.
 
@@ -7,63 +7,59 @@ Versionado según [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
-## [8.2.0] — 2026-06-18 (despliegue en producción — Windows Server 2022)
+## [8.2.0] — 2026-06-25 (despliegue en producción Windows Server 2022)
 
-### Despliegue real en producción
+> Primera puesta en producción real del sistema en el servidor institucional de COMECYT.
+> Stack nativo Windows (sin Docker/VM) por restricción de virtualización anidada en OpenStack.
 
-Primera vez que el sistema está corriendo en un servidor de producción institucional.
-Despliegue NATIVO en **Windows Server 2022** sin requerir WSL2 ni VM Linux.
+### Infraestructura desplegada
+- **Windows Server 2022** (OpenStack, 8 vCPU, 16 GB RAM) como plataforma de producción
+- **IIS 10** + URL Rewrite 2.1 + ARR 3.0 como proxy inverso y terminador TLS
+- **PHP 8.4.22** FastCGI bajo IIS (no php-fpm — equivalente funcional en Windows)
+- **PostgreSQL 18.3** instalado como servicio Windows desde binarios ZIP
+- **Node.js 22** + **Next.js 16 standalone** como servicio NSSM
+- **Laravel Reverb** (WebSocket) como servicio NSSM; proxy via ARR con `<webSocket enabled="true" />`
+- **NSSM** reemplazando Supervisor: 4 servicios (`comecyt-web`, `comecyt-reverb`, `comecyt-queue`, `comecyt-scheduler`)
+- **win-acme** listo para emitir certificado Let's Encrypt cuando el DNS apunte al servidor
 
-#### Stack nativo Windows desplegado
-- **PHP 8.2** vía equivalente Windows
-- **IIS** como reverse-proxy (en lugar de nginx)
-- **Application Request Routing (ARR)** + **URL Rewrite** para proxy a backend
-- **PostgreSQL 18** Windows installer
-- **NSSM** (Non-Sucking Service Manager) para servicios persistentes (en lugar de supervisor)
-- **win-acme** preparado para SSL Let's Encrypt (cuando llegue DNS)
+### Configuración de seguridad
+- `fastcgi.impersonate = 0` en `php.ini` — PHP corre como `IIS APPPOOL\comecyt`, no como IUSR
+- ACL en `.env`: solo `SYSTEM` + `Admins` + `IIS APPPOOL\comecyt` tienen acceso
+- Config **sin caché** (`config:cache` deshabilitado) porque `HealthController` y `app:deploy-check` usan `env()` directo
+- JWT en cookie `comecyt_auth` HttpOnly — nunca expuesto a JS
+- 2FA TOTP activo en cuenta admin
 
-#### Componentes verificados funcionando
-- `php artisan app:deploy-check` verde
-- Login real con JWT en cookie HttpOnly + cookie domain
-- **2FA TOTP** activado en cuenta admin + códigos de recuperación
-- `/api/health` responde 200 con `X-Health-Token`
-- Reverb WebSocket **directo** funcional (pusher:connection_established)
-- Reverb WebSocket **vía IIS+ARR (wss://)** funcional tras fix de `<webSocket enabled="true" />`
-- Backups automáticos PostgreSQL (tarea programada, 02:00 diario, retención 14 días, dump real verificado)
-- Firewall Windows: regla `COMECYT-Web-In` activa para puertos 80/443 inbound
-- Tope IIS de subida elevado a 50 MB (coincide con PHP)
-- Permisos de `pgpass.conf` blindados (solo SYSTEM/Administrators)
-- VAPID keys generadas para Web Push API
+### Usuarios creados en BD
+- `admin@comecyt.gob.mx` → Administrador (2FA activo)
+- `asd@asd.com` → Revisor (prueba)
+- `evaluadorr@uaemex.mx` → Evaluador (prueba)
+- `solicitante@institucion.mx` → Solicitante (prueba)
 
-#### Documentación generada en despliegue
-- **`docs/WINDOWS_DEPLOYMENT.md`** (+352 líneas) en branch `windows-deployment`
-  - §13 — **WebSocket vía IIS+ARR** (síntoma 500, aislamiento, causa, fix, verificación)
-  - Tabla de errores W1-W10 con causa/solución documentada
-- **`apps/api/public/web.config`** con:
-  - `<webSocket enabled="true" />` bajo `<system.webServer>`
-  - Regla URL Rewrite `Reverb-WebSocket` para `/app/*` → `127.0.0.1:8080` con server variables `HTTP_X_FORWARDED_FOR`, `HTTP_X_FORWARDED_PROTO`, `HTTP_X_FORWARDED_HOST`
-- **`emitir-cert-letsencrypt.ps1`** — script win-acme listo para correr cuando llegue DNS
+### Backups automatizados
+- Tarea programada Windows (SYSTEM, 02:00 diario) ejecutando `backup.ps1`
+- Retención 14 días, destino `C:\comecyt\backups\`
 
-### Operacional
-- Claude Code instalado en el servidor para deploy in-situ (mejor que pasar screenshots)
-- Branch `windows-deployment` en GitHub con commit `b2388c9` pendiente de merge a `main`
+### Documentación generada
+- `docs/WINDOWS_DEPLOYMENT.md` — guía completa §1–§19 (476 líneas)
+- `apps/api/public/web.config` — configuración IIS definitiva con WebSocket fix
+- `emitir-cert-letsencrypt.ps1` — helper para emisión de cert TLS cuando DNS resuelva
 
-### Dependencias externas pendientes (NO bloqueantes técnicamente, sí para apertura pública)
-- 🔴 **DNS + IP pública** (Infra COMECYT) — bloquea acceso público
-- 🔴 **Apertura puertos 80/443** al internet (Infra) — bloquea acceso público
-- 🟡 **SMTP institucional** (TIC) — bloquea emails de recovery/notificaciones
+### Problemas resueltos durante el despliegue
+- PHP exit 53 (`0xC0000135`) → instalación de VC++ 2015-2022 Redistributable
+- Composer fallaba con "requires php >=8.4" → README indicaba 8.2+ pero Symfony 8 exige 8.4
+- NSSM servicios Running pero puertos sin escuchar → `AppParameters` debe setearse separado del `install`
+- IIS 500.19 Win32=33 → secciones bloqueadas en `applicationHost.config`; fix: `appcmd unlock`
+- API 500 tras hardening ACL → `fastcgi.impersonate=1` hacía correr PHP como IUSR sin permisos; fix: `impersonate=0`
+- WebSocket `wss://` rechazado (`Connection header invalid`) → `<webSocket enabled="false"/>` deshabilitaba el módulo que ARR necesita para el handshake 101
+- `config:cache` rompía health check → `env()` retorna vacío cuando config está cacheada; solución: no cachear
 
-Mientras se espera, el sistema es accesible **solo dentro del server** vía truco del archivo `hosts`.
-
-### Lecciones documentadas
-- Sin WSL2/Hyper-V disponible, la ruta nativa Windows es viable pero requiere stack distinto
-- El clasificador de seguridad de Claude Code correctamente bloqueó extracción de credenciales de env vars (patrón de prompt injection)
-- Tener Claude Code corriendo en el server durante deploy es clave para troubleshooting en vivo
-
-### Verificación
-- Sistema corriendo en https://apoyoempresarial-comecyt.gob.mx (solo intra-server por ahora)
-- 3 PATs de GitHub rotados durante la sesión (exposición controlada, revocados)
-- SHA `b2388c9` en branch `windows-deployment` listo para merge a main
+### Pendientes a la fecha 2026-06-25
+- DNS `apoyoempresarial-comecyt.gob.mx` → IP pública (en manos de Infra)
+- Certificado TLS Let's Encrypt (post-DNS)
+- SMTP para notificaciones
+- Imágenes del carrusel de login (vía panel admin)
+- Logo oficial Estado de México (branding dual deshabilitado temporalmente)
+- Visibilidad del repo (actualmente público — revisar con dirección institucional)
 
 ---
 
