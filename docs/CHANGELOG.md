@@ -7,6 +7,22 @@ Versionado según [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [8.2.1] — 2026-06-25 (acceso localhost + documentación de cierre)
+
+### IIS — acceso local via `localhost`
+- Bindings `http/*:80:localhost` y `https/*:443:localhost` agregados al sitio `comecyt`
+- Cert SSL del dominio asignado a `localhost:443` via `netsh http add sslcert`
+- Regla `LocalhostRedirect` en `web.config`: `http://localhost` → `https://apoyoempresarial-comecyt.gob.mx`
+- Escribir `localhost` en el navegador del servidor abre el sistema (advertencia de cert — normal hasta Let's Encrypt)
+
+### Documentación de cierre
+- `WINDOWS_DEPLOYMENT.md` §20 — acceso localhost, comandos de restauración del binding
+- `NEXT_STEPS.md` — estado actualizado al 2026-06-25, pendientes externos claros
+- `OPERATIONS.md` — Apéndice W con comandos Windows de operación diaria
+- `COMECYT_CREDENCIALES.txt` en Desktop del servidor con credenciales de los 4 roles
+
+---
+
 ## [8.2.0] — 2026-06-25 (despliegue en producción Windows Server 2022)
 
 > Primera puesta en producción real del sistema en el servidor institucional de COMECYT.
