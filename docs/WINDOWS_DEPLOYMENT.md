@@ -548,4 +548,70 @@ Pendientes externos:
 
 ---
 
+## 20. Acceso local via `localhost`
+
+**Fecha:** 2026-06-25
+
+El sitio IIS está ligado al hostname `apoyoempresarial-comecyt.gob.mx`. Para que el TIC pueda acceder escribiendo `localhost` en el navegador del servidor se agregaron bindings y una regla de redirección adicional.
+
+### Configuración aplicada
+
+**Bindings IIS del sitio `comecyt`:**
+
+```
+http/*:80:apoyoempresarial-comecyt.gob.mx
+https/*:443:apoyoempresarial-comecyt.gob.mx
+http/*:80:localhost                          ← agregado
+https/*:443:localhost                        ← agregado
+```
+
+**Cert SSL en localhost:443** (via netsh, mismo hash que el dominio):
+
+```powershell
+netsh http add sslcert hostnameport=localhost:443 `
+  certhash=81e545374293116def95ea80862dd3525b769ce3 `
+  appid='{4dc3e181-e14b-4a21-b022-59fc669b0914}' `
+  certstorename=MY
+```
+
+**Regla `LocalhostRedirect` en `web.config`** (antes de `HttpsRedirect`):
+
+```xml
+<rule name="LocalhostRedirect" stopProcessing="true">
+  <match url="(.*)" />
+  <conditions>
+    <add input="{HTTP_HOST}" pattern="^localhost$" />
+  </conditions>
+  <action type="Redirect" url="https://apoyoempresarial-comecyt.gob.mx/{R:1}" redirectType="Found" />
+</rule>
+```
+
+### Comportamiento resultante
+
+| URL en el navegador | Resultado |
+|---|---|
+| `http://localhost` | Redirige → `https://apoyoempresarial-comecyt.gob.mx/login` |
+| `https://localhost` | Sirve el sistema directamente (advertencia de cert — normal hasta tener Let's Encrypt) |
+| `https://apoyoempresarial-comecyt.gob.mx` | URL canónica, funciona via hosts file |
+
+> La **advertencia de certificado** en `https://localhost` es normal — el cert es para el dominio institucional, no para `localhost`. Desaparece en cuanto Let's Encrypt emita el cert real con el dominio (§12). Click en **Avanzado → Continuar de todas formas** para acceder.
+
+### Si se pierde el binding (reinicio de IIS o actualización):
+
+```powershell
+# Restaurar binding localhost en IIS
+& "$env:SystemRoot\System32\inetsrv\appcmd.exe" set site "comecyt" `
+  "/+bindings.[protocol='http',bindingInformation='*:80:localhost']"
+& "$env:SystemRoot\System32\inetsrv\appcmd.exe" set site "comecyt" `
+  "/+bindings.[protocol='https',bindingInformation='*:443:localhost']"
+
+# Restaurar cert SSL para localhost
+netsh http add sslcert hostnameport=localhost:443 `
+  certhash=81e545374293116def95ea80862dd3525b769ce3 `
+  appid='{4dc3e181-e14b-4a21-b022-59fc669b0914}' `
+  certstorename=MY
+```
+
+---
+
 _Documento generado durante el despliegue inicial en Windows. Mantener actualizado ante cambios de infraestructura._
