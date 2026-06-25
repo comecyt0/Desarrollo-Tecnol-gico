@@ -17,7 +17,9 @@
 | ✅ Backups diarios PostgreSQL | Tarea programada SYSTEM, 02:00, retención 14 días |
 | ✅ Puertos 80/443 escuchando | Windows Firewall rule activa |
 | ✅ PATs de GitHub revocados | Token `ghp_…CNBu` revocado tras el push |
-| ✅ Documentación Windows | `docs/WINDOWS_DEPLOYMENT.md` §1–§19 en `main` |
+| ✅ Documentación Windows | `docs/WINDOWS_DEPLOYMENT.md` §1–§21 en `main` |
+| ✅ Dominio definitivo configurado | `comecyt-sistemas.edomex.gob.mx` en todos los archivos de config y docs |
+| ✅ Cert autofirmado confiable localmente | `New-SelfSignedCertificate` → Trusted Root CA → candado sin warning en el servidor |
 
 ---
 
