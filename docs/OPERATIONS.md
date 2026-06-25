@@ -517,5 +517,101 @@ sudo -u www-data php artisan tinker --execute='
 
 ---
 
+---
+
+## APÉNDICE W — Operaciones en Windows Server 2022 (producción actual)
+
+> El sistema está desplegado en Windows Server 2022 con stack nativo (IIS+PHP+NSSM). Esta sección complementa lo anterior con los equivalentes Windows. Ver `docs/WINDOWS_DEPLOYMENT.md` para la guía completa de despliegue.
+
+### W.1 Gestión de servicios
+
+```powershell
+# Ver estado
+Get-Service comecyt-web, comecyt-reverb, comecyt-queue, comecyt-scheduler
+
+# Reiniciar todos
+Restart-Service comecyt-web, comecyt-reverb, comecyt-queue, comecyt-scheduler
+
+# Reiniciar solo uno
+Restart-Service comecyt-web
+
+# Reiniciar IIS (si hay problemas con PHP FastCGI)
+iisreset
+```
+
+### W.2 Logs
+
+```powershell
+# Laravel (API)
+Get-Content C:\comecyt\apps\api\storage\logs\laravel.log -Tail 50 -Wait
+
+# IIS (accesos y errores)
+Get-Content (Get-ChildItem C:\inetpub\logs\LogFiles\W3SVC2\ | Sort LastWriteTime -Desc | Select -First 1).FullName -Tail 30
+
+# NSSM (stdout/stderr de cada servicio)
+# Los logs están en C:\comecyt\logs\ si fueron configurados en NSSM
+nssm status comecyt-web
+```
+
+### W.3 Base de datos
+
+```powershell
+$env:PGPASSWORD = (Select-String DB_PASSWORD C:\comecyt\apps\api\.env).Line.Split('=')[1]
+
+# Consola interactiva
+& 'C:\pgsql\bin\psql.exe' -U comecyt_app -d comecyt_prod
+
+# Query rápida
+& 'C:\pgsql\bin\psql.exe' -U comecyt_app -d comecyt_prod -c "SELECT count(*) FROM users;"
+
+# Backup manual
+& C:\comecyt\backups\backup.ps1
+```
+
+### W.4 Despliegue de actualizaciones
+
+Ver `docs/WINDOWS_DEPLOYMENT.md` §14 para el procedimiento completo. Resumen:
+
+```powershell
+Set-Location C:\comecyt\apps\api
+& 'C:\php\php.exe' artisan migrate --force
+& 'C:\php\php.exe' artisan queue:restart
+
+# Si hay cambios en el frontend:
+Stop-Service comecyt-web
+Set-Location C:\comecyt\apps\web
+& 'C:\Program Files\nodejs\npm.cmd' run build
+Copy-Item .next\static .next\standalone\.next\static -Recurse -Force
+Copy-Item public       .next\standalone\public       -Recurse -Force
+Start-Service comecyt-web
+```
+
+### W.5 Reset de contraseña admin (Windows)
+
+```powershell
+Set-Location C:\comecyt\apps\api
+$hash = & 'C:\php\php.exe' -r "echo password_hash('NUEVA_PASSWORD', PASSWORD_BCRYPT);"
+$env:PGPASSWORD = (Select-String DB_PASSWORD .env).Line.Split('=')[1]
+& 'C:\pgsql\bin\psql.exe' -U comecyt_app -d comecyt_prod -c "UPDATE users SET password='$hash' WHERE email='admin@comecyt.gob.mx';"
+```
+
+### W.6 Health check rápido
+
+```powershell
+# Todos los servicios
+Get-Service comecyt-web,comecyt-reverb,comecyt-queue,comecyt-scheduler,W3SVC | Select Name,Status
+
+# API Laravel
+[System.Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}
+(Invoke-WebRequest https://apoyoempresarial-comecyt.gob.mx/api/health -UseBasicParsing).StatusCode
+
+# Deploy check (sale 0 si todo OK)
+Set-Location C:\comecyt\apps\api
+& 'C:\php\php.exe' artisan app:deploy-check; echo "Exit: $LASTEXITCODE"
+```
+
+---
+
 > **Soporte técnico:** Issues en el repo o equipo de TIC del COMECYT.
 > **Soporte de seguridad:** Ver `docs/security/incident-response.md` §1 (cadena de mando).
+> **Operaciones Windows:** Ver `docs/WINDOWS_DEPLOYMENT.md` para referencia completa.

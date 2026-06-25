@@ -7,6 +7,62 @@ Versionado según [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [8.2.0] — 2026-06-25 (despliegue en producción Windows Server 2022)
+
+> Primera puesta en producción real del sistema en el servidor institucional de COMECYT.
+> Stack nativo Windows (sin Docker/VM) por restricción de virtualización anidada en OpenStack.
+
+### Infraestructura desplegada
+- **Windows Server 2022** (OpenStack, 8 vCPU, 16 GB RAM) como plataforma de producción
+- **IIS 10** + URL Rewrite 2.1 + ARR 3.0 como proxy inverso y terminador TLS
+- **PHP 8.4.22** FastCGI bajo IIS (no php-fpm — equivalente funcional en Windows)
+- **PostgreSQL 18.3** instalado como servicio Windows desde binarios ZIP
+- **Node.js 22** + **Next.js 16 standalone** como servicio NSSM
+- **Laravel Reverb** (WebSocket) como servicio NSSM; proxy via ARR con `<webSocket enabled="true" />`
+- **NSSM** reemplazando Supervisor: 4 servicios (`comecyt-web`, `comecyt-reverb`, `comecyt-queue`, `comecyt-scheduler`)
+- **win-acme** listo para emitir certificado Let's Encrypt cuando el DNS apunte al servidor
+
+### Configuración de seguridad
+- `fastcgi.impersonate = 0` en `php.ini` — PHP corre como `IIS APPPOOL\comecyt`, no como IUSR
+- ACL en `.env`: solo `SYSTEM` + `Admins` + `IIS APPPOOL\comecyt` tienen acceso
+- Config **sin caché** (`config:cache` deshabilitado) porque `HealthController` y `app:deploy-check` usan `env()` directo
+- JWT en cookie `comecyt_auth` HttpOnly — nunca expuesto a JS
+- 2FA TOTP activo en cuenta admin
+
+### Usuarios creados en BD
+- `admin@comecyt.gob.mx` → Administrador (2FA activo)
+- `asd@asd.com` → Revisor (prueba)
+- `evaluadorr@uaemex.mx` → Evaluador (prueba)
+- `solicitante@institucion.mx` → Solicitante (prueba)
+
+### Backups automatizados
+- Tarea programada Windows (SYSTEM, 02:00 diario) ejecutando `backup.ps1`
+- Retención 14 días, destino `C:\comecyt\backups\`
+
+### Documentación generada
+- `docs/WINDOWS_DEPLOYMENT.md` — guía completa §1–§19 (476 líneas)
+- `apps/api/public/web.config` — configuración IIS definitiva con WebSocket fix
+- `emitir-cert-letsencrypt.ps1` — helper para emisión de cert TLS cuando DNS resuelva
+
+### Problemas resueltos durante el despliegue
+- PHP exit 53 (`0xC0000135`) → instalación de VC++ 2015-2022 Redistributable
+- Composer fallaba con "requires php >=8.4" → README indicaba 8.2+ pero Symfony 8 exige 8.4
+- NSSM servicios Running pero puertos sin escuchar → `AppParameters` debe setearse separado del `install`
+- IIS 500.19 Win32=33 → secciones bloqueadas en `applicationHost.config`; fix: `appcmd unlock`
+- API 500 tras hardening ACL → `fastcgi.impersonate=1` hacía correr PHP como IUSR sin permisos; fix: `impersonate=0`
+- WebSocket `wss://` rechazado (`Connection header invalid`) → `<webSocket enabled="false"/>` deshabilitaba el módulo que ARR necesita para el handshake 101
+- `config:cache` rompía health check → `env()` retorna vacío cuando config está cacheada; solución: no cachear
+
+### Pendientes a la fecha 2026-06-25
+- DNS `apoyoempresarial-comecyt.gob.mx` → IP pública (en manos de Infra)
+- Certificado TLS Let's Encrypt (post-DNS)
+- SMTP para notificaciones
+- Imágenes del carrusel de login (vía panel admin)
+- Logo oficial Estado de México (branding dual deshabilitado temporalmente)
+- Visibilidad del repo (actualmente público — revisar con dirección institucional)
+
+---
+
 ## [8.1.0] — 2026-06-14 (cierre operativo)
 
 ### CI/CD
