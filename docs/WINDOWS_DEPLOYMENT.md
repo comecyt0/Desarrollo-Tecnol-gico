@@ -349,4 +349,50 @@ Resultado: `Open` + `{"event":"pusher:connection_established",...}` ✅
 
 ---
 
+## 14. Procedimiento de actualización del código (futuro)
+
+`C:\comecyt` **no es un clon** del repo (se montó desde un ZIP + `git init` local). Por eso para traer nuevos features del equipo dev **no se usa `git pull` directo ahí**. Método recomendado (seguro para un deployment vivo):
+
+### Método A — clon temporal + copia selectiva (recomendado)
+```powershell
+# 0) Backup de seguridad ANTES de tocar nada
+& C:\comecyt\backups\backup.ps1
+
+# 1) Traer el código nuevo a un temporal
+$t = 'C:\tools\_dl\update'
+& 'C:\tools\git\cmd\git.exe' clone --depth 1 https://github.com/comecyt0/Desarrollo-Tecnol-gico.git $t
+
+# 2) Copiar SOLO el código fuente, preservando estado/runtime/secretos
+#    Backend (NO tocar: .env, storage\, vendor\, bootstrap\cache)
+robocopy "$t\apps\api" C:\comecyt\apps\api /E /XD vendor storage bootstrap\cache node_modules /XF .env
+#    Frontend (NO tocar: .env.local, node_modules, .next)
+robocopy "$t\apps\web" C:\comecyt\apps\web /E /XD node_modules .next /XF .env.local
+
+# 3) Reinstalar deps + migrar + rebuild
+cd C:\comecyt\apps\api
+& 'C:\php\php.exe' 'C:\tools\composer\composer.phar' install --no-dev --optimize-autoloader
+& 'C:\php\php.exe' artisan migrate --force
+cd C:\comecyt\apps\web
+& 'C:\Program Files\nodejs\npm.cmd' install --legacy-peer-deps
+& 'C:\Program Files\nodejs\npm.cmd' run build
+Copy-Item .next\static\* .next\standalone\.next\static\ -Recurse -Force
+Copy-Item public\*       .next\standalone\public\       -Recurse -Force
+
+# 4) Reiniciar servicios + IIS
+Restart-Service comecyt-web,comecyt-reverb,comecyt-queue,comecyt-scheduler
+iisreset
+
+# 5) Smoke test (§11)
+```
+
+### Método B — convertir `C:\comecyt` en clon real
+Permite `git pull` futuro, pero hay que reconciliar la historia local (init) con upstream con cuidado (riesgo de sobrescribir `web.config`/runtime). Solo si se quiere flujo git puro. Requiere: `git remote add origin …`, `git fetch`, `git reset --mixed origin/main`, resolver los archivos locales (`web.config`, etc.) como cambios versionados.
+
+### Método C — re-deploy en carpeta nueva + swap de IIS (zero-downtime)
+Desplegar la versión nueva en `C:\comecyt2`, probarla en un puerto interno, y cambiar el *physical path* del sitio IIS + los `AppDirectory` de los servicios NSSM a la carpeta nueva. Más complejo, pero permite rollback instantáneo (volver a apuntar a la carpeta anterior). Recomendado cuando el sistema ya tenga tráfico real.
+
+> Regla de oro: **siempre `backup.ps1` antes**, y nunca sobrescribir `.env`, `.env.local`, `storage\`, ni `bootstrap\cache\`.
+
+---
+
 _Documento generado durante el despliegue inicial en Windows. Mantener actualizado ante cambios de infraestructura._
