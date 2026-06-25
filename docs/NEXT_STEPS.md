@@ -1,39 +1,117 @@
-# 📋 Próximos pasos para tener el sistema 100% en producción
+﻿# 📋 Próximos pasos para tener el sistema 100% en producción
 
-> **Audiencia:** Líder TIC del COMECYT.
-> **Estado al 2026-06-18:** ✅ Sistema DESPLEGADO en Windows Server 2022 IIS+ARR. Funciona dentro del server. Solo faltan 2 dependencias externas (DNS de Infra + SMTP de TIC).
-> **Tiempo restante estimado:** 30 min de acción del usuario + tiempo de respuesta de Infra/TIC.
-
-## ⚡ ESTADO ACTUAL
-
-```
-✅ Auditoría de seguridad completa
-✅ Documentación exhaustiva (~6,500 líneas)
-✅ CI/CD operativo
-✅ Repo en GitHub con histórico limpio
-✅ Bootstrap.sh para Linux (Ubuntu)
-✅ DEPLOY HECHO en Windows Server 2022 (IIS+ARR+NSSM)
-✅ Backups PostgreSQL automatizados
-✅ 2FA admin activo
-✅ Healthcheck funcional
-✅ WebSocket Reverb funcional (directo + vía IIS+ARR)
-
-⏳ FALTA del usuario (HOY, ~30 min):
-   - Push + Merge del branch `windows-deployment` a main
-   - Mandar 2 correos institucionales (Infra + TIC)
-   - Respaldar y borrar SECRETS_GENERADOS.txt
-   - Revocar PAT temporal
-
-⏳ FALTA externamente (1-3 días hábiles):
-   - DNS público + IP + puertos 80/443 (Infra)
-   - SMTP institucional (TIC)
-```
+> **Audiencia:** Líder TIC del COMECYT que va a operar el deploy.
+> **Estado al 2026-06-25:** El sistema **YA ESTÁ DESPLEGADO** en producción (Windows Server 2022, stack nativo IIS+PHP+NSSM+PostgreSQL). Ver `docs/WINDOWS_DEPLOYMENT.md` para el detalle completo. Lo que queda son tareas externas (DNS, TLS, SMTP).
 
 ---
 
+## ✅ COMPLETADO — 2026-06-25
+
+| Tarea | Detalle |
+|---|---|
+| ✅ Deploy en servidor Windows Server 2022 | Stack nativo IIS+PHP 8.4+Next.js 16+PostgreSQL 18+NSSM |
+| ✅ Base de datos inicializada | Migrations + seeders ejecutados, 4 usuarios creados |
+| ✅ Servicios corriendo como Windows Services | comecyt-web, comecyt-reverb, comecyt-queue, comecyt-scheduler |
+| ✅ WebSocket Reverb via IIS/ARR | `wss://dominio/app/{key}` → 101 verificado |
+| ✅ 2FA TOTP en cuenta admin | Activo con `pragmarx/google2fa` |
+| ✅ Backups diarios PostgreSQL | Tarea programada SYSTEM, 02:00, retención 14 días |
+| ✅ Puertos 80/443 escuchando | Windows Firewall rule activa |
+| ✅ PATs de GitHub revocados | Token `ghp_…CNBu` revocado tras el push |
+| ✅ Documentación Windows | `docs/WINDOWS_DEPLOYMENT.md` §1–§19 en `main` |
+
 ---
 
-## 🔴 BLOQUE 1 — URGENTE (HACER YA, antes de cualquier otra cosa)
+## 🔴 PENDIENTE URGENTE
+
+### P-1 — DNS: apuntar dominio al servidor
+
+**Dominio:** `apoyoempresarial-comecyt.gob.mx`
+
+1. Obtener la IP pública del servidor de Infra/OpenStack
+2. Crear registro `A` en el DNS institucional apuntando a esa IP
+3. Abrir puertos 80 y 443 en el security group de OpenStack
+4. Verificar resolución: `Resolve-DnsName apoyoempresarial-comecyt.gob.mx`
+
+> Mientras tanto el sistema es accesible localmente vía la entrada en `hosts` (`127.0.0.1 apoyoempresarial-comecyt.gob.mx`).
+
+---
+
+### P-2 — Certificado TLS (Let's Encrypt)
+
+**Solo hacer DESPUÉS de que el DNS resuelva correctamente.**
+
+1. Quitar la línea temporal del `hosts`:
+   `C:\Windows\System32\drivers\etc\hosts` → borrar `127.0.0.1 apoyoempresarial-comecyt.gob.mx`
+2. Ejecutar el helper:
+   ```powershell
+   & C:\comecyt\emitir-cert-letsencrypt.ps1
+   ```
+3. win-acme instala el cert en el binding 443 de IIS y crea renovación automática (~60 días)
+
+---
+
+### P-3 — SMTP para notificaciones
+
+Configurar en `C:\comecyt\apps\api\.env`:
+
+```
+MAIL_MAILER=smtp
+MAIL_HOST=smtp.comecyt.gob.mx        # o el relay institucional
+MAIL_PORT=587
+MAIL_USERNAME=noreply@comecyt.gob.mx
+MAIL_PASSWORD=<contraseña>
+MAIL_ENCRYPTION=tls
+MAIL_FROM_ADDRESS=noreply@comecyt.gob.mx
+MAIL_FROM_NAME="COMECYT"
+```
+
+Después reiniciar la cola: `Restart-Service comecyt-queue`
+
+---
+
+## 🟡 IMPORTANTE (antes de apertura pública)
+
+### P-4 — Reemplazar usuarios de prueba
+
+Los usuarios actuales (`asd@asd.com`, `evaluadorr@uaemex.mx`, `solicitante@institucion.mx`) son de prueba. Antes de abrir a usuarios reales:
+1. Acceder como admin a `/admin/dashboard` → Usuarios
+2. Crear cuentas reales para el personal de COMECYT
+3. Desactivar o eliminar los usuarios de prueba
+
+### P-5 — Imágenes del carrusel del login
+
+Los slides del carrusel tienen `imagen_url: null` (gradiente puro).
+Para agregar imágenes reales: `/admin/carrusel` → subir JPG/WebP 1920×1080, < 2 MB por imagen.
+
+### P-6 — Logo oficial Estado de México
+
+El logo dual está deshabilitado (`NEXT_PUBLIC_EDOMEX_LOGO_URL=none`).
+Para habilitarlo con la imagen oficial: ver `docs/WINDOWS_DEPLOYMENT.md` §16.
+
+### P-7 — Aviso de Privacidad y Términos
+
+Las páginas `/privacidad` y `/terminos` son plantillas. Deben ser revisadas y aprobadas por:
+- Unidad de Transparencia (Aviso de Privacidad LFPDPPP)
+- Área Jurídica (Términos y Condiciones)
+
+Archivo: `apps/web/src/app/(legal)/privacidad/page.tsx` línea ~30 — llenar domicilio institucional.
+
+### P-8 — Visibilidad del repo en GitHub
+
+El repo `comecyt0/Desarrollo-Tecnol-gico` está actualmente **público**. Para un sistema gubernamental que procesa datos personales, lo recomendable es **privado**. Decidir con la dirección institucional antes de la apertura.
+
+### P-9 — Branch protection en GitHub
+
+Configurar en `github.com/comecyt0/Desarrollo-Tecnol-gico/settings/branches`:
+- Requerir PR + aprobación antes de merge a `main`
+- Requerir que pasen los status checks (CI)
+- Deshabilitar force push sobre `main`
+
+---
+
+## 🟢 COMPLETADO (sesiones anteriores — 2026-06-14)
+
+### ~~BLOQUE 1 — URGENTE (HACER YA, antes de cualquier otra cosa)~~
 
 ### 1.1 Revocar los 2 PATs que se expusieron durante la sesión
 

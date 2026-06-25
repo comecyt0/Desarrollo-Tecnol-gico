@@ -395,4 +395,157 @@ Desplegar la versión nueva en `C:\comecyt2`, probarla en un puerto interno, y c
 
 ---
 
+## 15. Usuarios del sistema y credenciales iniciales
+
+**Fecha de configuración:** 2026-06-25
+
+Se configuraron 4 usuarios (uno por rol). Las credenciales completas están en:
+`C:\Users\Administrator\Desktop\COMECYT_CREDENCIALES.txt` (solo acceso local al servidor).
+
+| Rol | Email | Contraseña inicial | Dashboard |
+|---|---|---|---|
+| Administrador | `admin@comecyt.gob.mx` | `<ver COMECYT_CREDENCIALES.txt en Desktop del server>` | `/admin/dashboard` |
+| Revisor | `asd@asd.com` | `<ver COMECYT_CREDENCIALES.txt>` | `/revisor/solicitudes` |
+| Evaluador | `evaluadorr@uaemex.mx` | `<ver COMECYT_CREDENCIALES.txt>` | `/evaluador/evaluaciones` |
+| Solicitante | `solicitante@institucion.mx` | `<ver COMECYT_CREDENCIALES.txt>` | `/solicitante/dashboard` |
+
+> El admin tiene **2FA TOTP activo**. Al acceder por primera vez necesita escanear el QR desde la app autenticadora.
+> Los usuarios de prueba (revisor, evaluador, solicitante) deben reemplazarse por cuentas reales antes de la apertura pública. Usar `/admin/dashboard` → Usuarios.
+
+### Crear nuevos usuarios desde artisan
+
+```powershell
+# Correr el seeder de prueba de nuevo si se requiere reset
+Set-Location C:\comecyt\apps\api
+& 'C:\php\php.exe' artisan db:seed --class=UsuariosPruebaSeeder
+```
+
+### Crear usuario admin adicional (SQL directo)
+
+```powershell
+$env:PGPASSWORD = '<DB_PASSWORD>'   # ver C:\comecyt\apps\api\.env → DB_PASSWORD
+# Hash de contraseña (generado con php -r "echo password_hash('TuPass', PASSWORD_BCRYPT);")
+& 'C:\pgsql\bin\psql.exe' -U comecyt_app -d comecyt_prod -c "
+INSERT INTO users (name, email, password, rol_id, empresa_id, email_verified_at, created_at, updated_at)
+SELECT 'Nombre Admin', 'nuevo@comecyt.gob.mx', '\$2y\$12\$HASH_AQUI', r.id, e.id, NOW(), NOW(), NOW()
+FROM roles r, empresas e WHERE r.slug = 'admin' AND e.acronimo = 'COMECYT';"
+```
+
+---
+
+## 16. Branding dual (logo Estado de México)
+
+El sistema tiene un componente `DualBranding` (`apps/web/src/components/branding/DualBranding.tsx`) que muestra opcionalmente el logo del Gobierno del Estado de México junto al logo COMECYT. Se controla con la variable de entorno en `apps/web/.env.local`:
+
+| Valor de `NEXT_PUBLIC_EDOMEX_LOGO_URL` | Efecto |
+|---|---|
+| `/logo-edomex.svg` (default) | Muestra el logo placeholder local |
+| URL o ruta custom | Muestra esa imagen |
+| `none` | **Oculta el logo Edomex** (solo COMECYT) |
+
+**Estado actual (2026-06-25):** `NEXT_PUBLIC_EDOMEX_LOGO_URL=none` → logo Edomex oculto (pendiente definir si se usa y con qué imagen oficial).
+
+### Para habilitar el logo cuando se tenga la imagen oficial
+
+```powershell
+# 1. Copiar la imagen al directorio public del frontend
+Copy-Item 'ruta\logo-edomex-oficial.png' 'C:\comecyt\apps\web\public\logo-edomex.png'
+
+# 2. Editar .env.local
+#    Cambiar: NEXT_PUBLIC_EDOMEX_LOGO_URL=none
+#    Por:     NEXT_PUBLIC_EDOMEX_LOGO_URL=/logo-edomex.png
+
+# 3. Rebuild y reinicio (NEXT_PUBLIC_* se hornean en build-time)
+Stop-Service comecyt-web
+Set-Location C:\comecyt\apps\web
+& 'C:\Program Files\nodejs\npm.cmd' run build
+Copy-Item .next\static .next\standalone\.next\static -Recurse -Force
+Copy-Item public       .next\standalone\public       -Recurse -Force
+Start-Service comecyt-web
+```
+
+---
+
+## 17. Carrusel de imágenes del login
+
+El panel de login tiene un carrusel animado que obtiene sus slides desde `/api/carousel/slides`. Los 4 slides iniciales (creados por el seeder) tienen `imagen_url: null` — usan solo el gradiente institucional (vino/dorado).
+
+**Para agregar imágenes reales al carrusel:**
+
+1. Acceder como admin a `https://apoyoempresarial-comecyt.gob.mx/admin/carrusel`
+2. Subir imágenes de fondo para cada slide (recomendado: 1920×1080, JPG/WebP, < 2 MB)
+3. El carrusel las muestra de inmediato (sin rebuild del frontend)
+
+> Mientras no haya imágenes, el carrusel funciona con gradiente — no es un error.
+
+---
+
+## 18. Docker Desktop — por qué no está disponible en este servidor
+
+Se intentó instalar Docker Desktop en el servidor el 2026-06-25. La razón por la que **no puede funcionar** en este host es la misma que impide Hyper-V/WSL2 (§1):
+
+```
+VirtualizationFirmwareEnabled: False
+Resultado systeminfo: "A hypervisor has been detected. Features required
+for Hyper-V will not be displayed."
+```
+
+Docker Desktop en Windows requiere un motor Linux (contenedores Linux), que necesita:
+- **Backend WSL2**: requiere kernel WSL2 + virtualización anidada → no disponible.
+- **Backend Hyper-V**: requiere crear una VM Hyper-V (MobyLinux) → no disponible.
+
+### Para habilitar Docker en el futuro
+
+**Opción A — Nested virtualization en OpenStack (recomendado):**
+Pedir a Infra que habilite CPU passthrough para esta VM:
+```bash
+# El admin de OpenStack ejecuta en el hipervisor:
+openstack flavor set <flavor> --property hw:cpu_policy=dedicated
+openstack server set --property hw:nested_virt=true <server-id>
+# O editar nova.conf: virt_type=kvm, cpu_mode=host-passthrough
+```
+Después de eso: WSL2 + Docker Desktop funcionan sin más cambios.
+
+**Opción B — Docker en VM Linux separada:**
+Provisionar una VM Linux (Ubuntu 24.04) en el mismo proyecto OpenStack. Docker Engine nativo en Linux no requiere nested virt. Apuntar el dominio/balanceador a esa VM.
+
+**Estado del archivo de configuración de Docker Desktop:**
+`C:\Users\Administrator\AppData\Roaming\Docker\settings-store.json`
+Queda con `WslEngineEnabled: false, hyperVEnabled: true`. Si en el futuro se habilita nested virt, Docker Desktop debería arrancar sin más cambios (puede que requiera reabrir la app).
+
+---
+
+## 19. Estado del sistema al 2026-06-25
+
+```
+Servicios activos:
+  comecyt-web       Running  → Next.js  localhost:3000
+  comecyt-reverb    Running  → Reverb   localhost:8080
+  comecyt-queue     Running  → Laravel queue worker
+  comecyt-scheduler Running  → Laravel scheduler
+
+IIS:
+  Sitio "comecyt"   Started  → :80 (→HTTPS) y :443
+  App Pool "comecyt" Started
+
+Endpoints verificados:
+  GET  /login                → 200 (Next.js)
+  GET  /api/health           → 200 (Laravel)
+  GET  /api/carousel/slides  → 200 (4 slides)
+  WSS  /app/{key}            → 101 Switching Protocols (Reverb via ARR)
+
+Backups PostgreSQL:
+  Tarea programada: diaria 02:00, retención 14 días
+  Ubicación: C:\comecyt\backups\
+  Script:    C:\comecyt\backups\backup.ps1
+
+Pendientes externos:
+  [ ] DNS:   apoyoempresarial-comecyt.gob.mx → IP pública del servidor
+  [ ] TLS:   Ejecutar emitir-cert-letsencrypt.ps1 cuando DNS resuelva
+  [ ] SMTP:  Configurar MAIL_* en apps/api/.env
+  [ ] Logo:  NEXT_PUBLIC_EDOMEX_LOGO_URL=none (pendiente imagen oficial)
+```
+
+---
+
 _Documento generado durante el despliegue inicial en Windows. Mantener actualizado ante cambios de infraestructura._
