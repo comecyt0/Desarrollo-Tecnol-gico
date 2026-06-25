@@ -121,9 +121,9 @@ Mientras tanto, el sistema es accesible **solo dentro del server** (via truco de
 9. Mandar correo a **TIC** pidiendo credenciales SMTP
 
 ### Cuando llegue la respuesta de Infra (10 minutos)
-10. Quitar truco del hosts: `notepad C:\Windows\System32\drivers\etc\hosts` → borrar línea `127.0.0.1 apoyoempresarial-comecyt.gob.mx`
+10. Quitar truco del hosts: `notepad C:\Windows\System32\drivers\etc\hosts` → borrar línea `127.0.0.1 comecyt-sistemas.edomex.gob.mx`
 11. Correr `C:\comecyt\emitir-cert-letsencrypt.ps1`
-12. Verificar HTTPS público desde fuera del server: `curl -I https://apoyoempresarial-comecyt.gob.mx`
+12. Verificar HTTPS público desde fuera del server: `curl -I https://comecyt-sistemas.edomex.gob.mx`
 
 ### Cuando llegue la respuesta de TIC (5 minutos)
 13. Editar `.env` con credenciales SMTP

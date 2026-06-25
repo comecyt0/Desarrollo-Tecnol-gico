@@ -1,4 +1,4 @@
-﻿# 🛠️ Manual de Operación — COMECYT
+# 🛠️ Manual de Operación — COMECYT
 
 > **Audiencia:** Administradores del sistema, equipo de TIC, soporte L1/L2
 > **Pre-requisito:** Sistema ya desplegado (ver `docs/DEPLOYMENT.md`)
@@ -603,7 +603,7 @@ Get-Service comecyt-web,comecyt-reverb,comecyt-queue,comecyt-scheduler,W3SVC | S
 
 # API Laravel
 [System.Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}
-(Invoke-WebRequest https://apoyoempresarial-comecyt.gob.mx/api/health -UseBasicParsing).StatusCode
+(Invoke-WebRequest https://comecyt-sistemas.edomex.gob.mx/api/health -UseBasicParsing).StatusCode
 
 # Deploy check (sale 0 si todo OK)
 Set-Location C:\comecyt\apps\api

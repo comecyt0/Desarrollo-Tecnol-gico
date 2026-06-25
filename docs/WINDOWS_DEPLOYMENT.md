@@ -22,7 +22,7 @@
 | Scheduler | crontab | **`schedule:work`** (servicio NSSM) |
 | Cola | queue:work + Supervisor | **`queue:work`** (servicio NSSM) |
 
-**URL de producción (cuando el DNS apunte aquí):** `https://apoyoempresarial-comecyt.gob.mx`
+**URL de producción (cuando el DNS apunte aquí):** `https://comecyt-sistemas.edomex.gob.mx`
 **Estado de verificación local:** `app:deploy-check` ✅ verde · `GET /api/health` → **200** · login admin → **200** + cookie JWT.
 
 ---
@@ -86,7 +86,7 @@ C:\comecyt\SECRETS_GENERADOS.txt   ← ⚠️ mover a gestor de secretos y BORRA
                 Internet (443/tcp)
                        │
         ┌──────────────▼───────────────┐
-        │   IIS 10  (sitio "comecyt")   │   binding: apoyoempresarial-comecyt.gob.mx:443 (SNI)
+        │   IIS 10  (sitio "comecyt")   │   binding: comecyt-sistemas.edomex.gob.mx:443 (SNI)
         │   raíz física: apps\api\public│   + redirect 80→443
         └──────────────┬───────────────┘
        URL Rewrite + ARR enruta por path:
@@ -174,7 +174,7 @@ C:\php\php.exe artisan app:deploy-check        # debe terminar exit 0 (verde)
 
 # /api/health REQUIERE el header X-Health-Token = HEALTH_TOKEN del .env
 $h = (Get-Content .env | Where-Object {$_ -match '^HEALTH_TOKEN='}) -replace '^HEALTH_TOKEN=',''
-curl.exe -k -H "X-Health-Token: $h" https://apoyoempresarial-comecyt.gob.mx/api/health
+curl.exe -k -H "X-Health-Token: $h" https://comecyt-sistemas.edomex.gob.mx/api/health
 # → 200 {"status":"ok","checks":{"database":{"ok":true},"cache":{"ok":true},"storage":{"ok":true}}}
 ```
 
@@ -187,8 +187,8 @@ Las 4 *advertencias* esperadas del deploy-check en Windows (no son errores, NO b
 
 ## 7. TLS / HTTPS
 
-**Estado actual:** certificado **autofirmado** para `apoyoempresarial-comecyt.gob.mx`, enlazado a 443 (SNI).
-Para pruebas locales se añadió `127.0.0.1 apoyoempresarial-comecyt.gob.mx` al archivo `hosts`.
+**Estado actual:** certificado **autofirmado** para `comecyt-sistemas.edomex.gob.mx`, enlazado a 443 (SNI).
+Para pruebas locales se añadió `127.0.0.1 comecyt-sistemas.edomex.gob.mx` al archivo `hosts`.
 
 ### Para producción (cuando el DNS público apunte a este servidor)
 
@@ -210,7 +210,7 @@ Para pruebas locales se añadió `127.0.0.1 apoyoempresarial-comecyt.gob.mx` al 
 ## 8. ✅ Checklist de salida a producción (pendientes para el TIC)
 
 - [ ] **Dominio real**: confirmar el nombre correcto. `apoyoempresarial_comecyt.gob.mx` (con guion
-      bajo `_`) **es inválido** para DNS y TLS. Se asumió `apoyoempresarial-comecyt.gob.mx` (guion medio).
+      bajo `_`) **es inválido** para DNS y TLS. Se asumió `comecyt-sistemas.edomex.gob.mx` (guion medio).
       Si el real es otro, actualizar: `.env` (APP_URL, NEXT_PUBLIC_APP_URL, CORS_ALLOWED_ORIGINS,
       COOKIE_DOMAIN), `apps\web\.env.local` (NEXT_PUBLIC_*), el binding de IIS, el cert, y
       **recompilar el frontend** (`npm run build`, las NEXT_PUBLIC_* se hornean).
@@ -279,7 +279,7 @@ iisreset
 ## 11. Smoke test rápido (post-reboot)
 
 ```powershell
-$d='apoyoempresarial-comecyt.gob.mx'
+$d='comecyt-sistemas.edomex.gob.mx'
 Get-Service postgresql-18,comecyt-web,comecyt-reverb,comecyt-queue,comecyt-scheduler,W3SVC | Format-Table Name,Status
 curl.exe -k -s -o NUL -w "login: %{http_code}\n" "https://$d/login"                          # 200
 $h=(Get-Content C:\comecyt\apps\api\.env|?{$_ -match '^HEALTH_TOKEN='}) -replace '^HEALTH_TOKEN=',''
@@ -305,7 +305,7 @@ curl.exe -k -s -w "\nhealth: %{http_code}\n" -H "X-Health-Token: $h" "https://$d
 - ⏳ SMTP institucional (sin él no se envían correos de reset).
 
 **WebSocket (Reverb) vía IIS + ARR:**
-- ✅ **Resuelto y verificado** (ver §13). El upgrade `wss://apoyoempresarial-comecyt.gob.mx/app/<key>` conecta end-to-end. El fix fue `<webSocket enabled="true" />` en `web.config`.
+- ✅ **Resuelto y verificado** (ver §13). El upgrade `wss://comecyt-sistemas.edomex.gob.mx/app/<key>` conecta end-to-end. El fix fue `<webSocket enabled="true" />` en `web.config`.
 
 > Nota: el cert autofirmado se agregó a `Cert:\LocalMachine\Root` para pruebas locales; win-acme lo reemplaza por el real en el binding.
 
@@ -315,7 +315,7 @@ curl.exe -k -s -w "\nhealth: %{http_code}\n" -H "X-Health-Token: $h" "https://$d
 
 Cómo quedó configurado el tiempo real (Reverb) detrás de IIS, y el problema que costó resolver.
 
-**Arquitectura:** el frontend (laravel-echo/pusher-js) conecta a `wss://apoyoempresarial-comecyt.gob.mx:443/app/<REVERB_APP_KEY>`. IIS recibe el `wss` en 443, la regla de URL Rewrite `^(app|apps)` lo reescribe a `http://127.0.0.1:8080/{R:0}` y **ARR** hace el proxy (con upgrade WebSocket) hacia el servicio `comecyt-reverb`.
+**Arquitectura:** el frontend (laravel-echo/pusher-js) conecta a `wss://comecyt-sistemas.edomex.gob.mx:443/app/<REVERB_APP_KEY>`. IIS recibe el `wss` en 443, la regla de URL Rewrite `^(app|apps)` lo reescribe a `http://127.0.0.1:8080/{R:0}` y **ARR** hace el proxy (con upgrade WebSocket) hacia el servicio `comecyt-reverb`.
 
 **Síntoma:** la conexión fallaba con
 `WebSocketException: The 'Connection' header value '' is invalid` — el handshake **101 Switching Protocols** volvía del proxy **sin** el header `Connection: Upgrade`, y el cliente lo rechazaba. Un `GET` normal a `/app/<key>` devolvía `500` de `ARR/3.0`.
@@ -337,11 +337,11 @@ Pre-requisitos que ya estaban: feature **WebSocket Protocol** instalada (`Web-We
 # directo (debe responder primero):
 #   ws://127.0.0.1:8080/app/<key>?protocol=7   -> pusher:connection_established
 # por IIS/ARR (tras el fix):
-#   wss://apoyoempresarial-comecyt.gob.mx/app/<key>?protocol=7  -> Open + pusher:connection_established
+#   wss://comecyt-sistemas.edomex.gob.mx/app/<key>?protocol=7  -> Open + pusher:connection_established
 ```
 Resultado: `Open` + `{"event":"pusher:connection_established",...}` ✅
 
-> Las `NEXT_PUBLIC_REVERB_*` del frontend ya apuntan a `wss://apoyoempresarial-comecyt.gob.mx` puerto `443` esquema `https`, así que en cuanto el DNS+cert real estén activos, el tiempo real funciona sin recompilar.
+> Las `NEXT_PUBLIC_REVERB_*` del frontend ya apuntan a `wss://comecyt-sistemas.edomex.gob.mx` puerto `443` esquema `https`, así que en cuanto el DNS+cert real estén activos, el tiempo real funciona sin recompilar.
 
 | # | Síntoma | Causa | Solución |
 |---|---|---|---|
@@ -472,7 +472,7 @@ El panel de login tiene un carrusel animado que obtiene sus slides desde `/api/c
 
 **Para agregar imágenes reales al carrusel:**
 
-1. Acceder como admin a `https://apoyoempresarial-comecyt.gob.mx/admin/carrusel`
+1. Acceder como admin a `https://comecyt-sistemas.edomex.gob.mx/admin/carrusel`
 2. Subir imágenes de fondo para cada slide (recomendado: 1920×1080, JPG/WebP, < 2 MB)
 3. El carrusel las muestra de inmediato (sin rebuild del frontend)
 
@@ -540,7 +540,7 @@ Backups PostgreSQL:
   Script:    C:\comecyt\backups\backup.ps1
 
 Pendientes externos:
-  [ ] DNS:   apoyoempresarial-comecyt.gob.mx → IP pública del servidor
+  [ ] DNS:   comecyt-sistemas.edomex.gob.mx → IP pública del servidor
   [ ] TLS:   Ejecutar emitir-cert-letsencrypt.ps1 cuando DNS resuelva
   [ ] SMTP:  Configurar MAIL_* en apps/api/.env
   [ ] Logo:  NEXT_PUBLIC_EDOMEX_LOGO_URL=none (pendiente imagen oficial)
@@ -552,15 +552,15 @@ Pendientes externos:
 
 **Fecha:** 2026-06-25
 
-El sitio IIS está ligado al hostname `apoyoempresarial-comecyt.gob.mx`. Para que el TIC pueda acceder escribiendo `localhost` en el navegador del servidor se agregaron bindings y una regla de redirección adicional.
+El sitio IIS está ligado al hostname `comecyt-sistemas.edomex.gob.mx`. Para que el TIC pueda acceder escribiendo `localhost` en el navegador del servidor se agregaron bindings y una regla de redirección adicional.
 
 ### Configuración aplicada
 
 **Bindings IIS del sitio `comecyt`:**
 
 ```
-http/*:80:apoyoempresarial-comecyt.gob.mx
-https/*:443:apoyoempresarial-comecyt.gob.mx
+http/*:80:comecyt-sistemas.edomex.gob.mx
+https/*:443:comecyt-sistemas.edomex.gob.mx
 http/*:80:localhost                          ← agregado
 https/*:443:localhost                        ← agregado
 ```
@@ -582,7 +582,7 @@ netsh http add sslcert hostnameport=localhost:443 `
   <conditions>
     <add input="{HTTP_HOST}" pattern="^localhost$" />
   </conditions>
-  <action type="Redirect" url="https://apoyoempresarial-comecyt.gob.mx/{R:1}" redirectType="Found" />
+  <action type="Redirect" url="https://comecyt-sistemas.edomex.gob.mx/{R:1}" redirectType="Found" />
 </rule>
 ```
 
@@ -590,9 +590,9 @@ netsh http add sslcert hostnameport=localhost:443 `
 
 | URL en el navegador | Resultado |
 |---|---|
-| `http://localhost` | Redirige → `https://apoyoempresarial-comecyt.gob.mx/login` |
+| `http://localhost` | Redirige → `https://comecyt-sistemas.edomex.gob.mx/login` |
 | `https://localhost` | Sirve el sistema directamente (advertencia de cert — normal hasta tener Let's Encrypt) |
-| `https://apoyoempresarial-comecyt.gob.mx` | URL canónica, funciona via hosts file |
+| `https://comecyt-sistemas.edomex.gob.mx` | URL canónica, funciona via hosts file |
 
 > La **advertencia de certificado** en `https://localhost` es normal — el cert es para el dominio institucional, no para `localhost`. Desaparece en cuanto Let's Encrypt emita el cert real con el dominio (§12). Click en **Avanzado → Continuar de todas formas** para acceder.
 

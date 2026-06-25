@@ -1,16 +1,16 @@
 # =============================================================================
 # COMECYT — Emite el certificado Let's Encrypt (win-acme) para producción.
 # Correr SOLO cuando:
-#   1) apoyoempresarial-comecyt.gob.mx RESUELVA a la IP pública real del server (DNS).
+#   1) comecyt-sistemas.edomex.gob.mx RESUELVA a la IP pública real del server (DNS).
 #   2) Puertos 80 y 443 estén abiertos desde Internet.
 #   3) Hayas QUITADO la línea temporal del hosts:
-#        C:\Windows\System32\drivers\etc\hosts  -> borrar "127.0.0.1 apoyoempresarial-comecyt.gob.mx"
+#        C:\Windows\System32\drivers\etc\hosts  -> borrar "127.0.0.1 comecyt-sistemas.edomex.gob.mx"
 # win-acme instalará el cert en el binding del sitio IIS "comecyt" y creará una
 # tarea programada de renovación automática (~cada 60 días).
 # =============================================================================
 param([string]$Email = '')
 
-$dominio = 'apoyoempresarial-comecyt.gob.mx'
+$dominio = 'comecyt-sistemas.edomex.gob.mx'
 
 # Verificación rápida de que el dominio ya NO apunta a 127.0.0.1
 $resuelve = (Resolve-DnsName $dominio -Type A -ErrorAction SilentlyContinue | Where-Object { $_.IPAddress }).IPAddress
