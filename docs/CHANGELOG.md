@@ -7,6 +7,24 @@ Versionado según [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [8.2.2] — 2026-06-25 (cambio de dominio + cert autofirmado confiable)
+
+### Dominio
+- Dominio institucional definitivo: `comecyt-sistemas.edomex.gob.mx`
+- Reemplazado en: `apps/api/.env`, `apps/web/.env.local`, `web.config`, `emitir-cert-letsencrypt.ps1`, `hosts`, docs y todos los archivos de configuración
+- IIS: bindings `http/*:80` y `https/*:443` movidos al nuevo dominio; bindings del dominio anterior eliminados
+- Redirección `localhost` → `https://comecyt-sistemas.edomex.gob.mx` verificada (302)
+- Next.js reconstruido con `NEXT_PUBLIC_*` baked al nuevo dominio
+
+### Certificado TLS (temporal hasta Let's Encrypt)
+- Cert autofirmado generado con `New-SelfSignedCertificate` para `comecyt-sistemas.edomex.gob.mx` + `localhost` (válido 2 años)
+- Hash: `2e676a4963e3f4b5836852df17c1c7eb88a684ad`
+- Registrado en `http.sys` vía `netsh http add sslcert` para ambos hostnames
+- Importado a `cert:\LocalMachine\Root` (Trusted Root CA) → navegadores del servidor muestran candado sin warning
+- Al emitir el cert Let's Encrypt (§12, después del DNS), este cert temporal queda reemplazado automáticamente
+
+---
+
 ## [8.2.1] — 2026-06-25 (acceso localhost + documentación de cierre)
 
 ### IIS — acceso local via `localhost`

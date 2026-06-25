@@ -569,7 +569,7 @@ https/*:443:localhost                        ← agregado
 
 ```powershell
 netsh http add sslcert hostnameport=localhost:443 `
-  certhash=81e545374293116def95ea80862dd3525b769ce3 `
+  certhash=2e676a4963e3f4b5836852df17c1c7eb88a684ad `
   appid='{4dc3e181-e14b-4a21-b022-59fc669b0914}' `
   certstorename=MY
 ```
@@ -607,9 +607,116 @@ netsh http add sslcert hostnameport=localhost:443 `
 
 # Restaurar cert SSL para localhost
 netsh http add sslcert hostnameport=localhost:443 `
-  certhash=81e545374293116def95ea80862dd3525b769ce3 `
+  certhash=2e676a4963e3f4b5836852df17c1c7eb88a684ad `
   appid='{4dc3e181-e14b-4a21-b022-59fc669b0914}' `
   certstorename=MY
+```
+
+---
+
+## 21. Cambio de dominio a `comecyt-sistemas.edomex.gob.mx`
+
+**Fecha:** 2026-06-25
+
+El dominio institucional definitivo es `comecyt-sistemas.edomex.gob.mx` (reemplaza a `apoyoempresarial-comecyt.gob.mx` usado durante el despliegue inicial).
+
+### Archivos actualizados
+
+| Archivo | Variables / líneas cambiadas |
+|---|---|
+| `apps/api/.env` | `APP_URL`, `NEXT_PUBLIC_REVERB_HOST`, `NEXT_PUBLIC_APP_URL`, `CORS_ALLOWED_ORIGINS`, `COOKIE_DOMAIN` |
+| `apps/web/.env.local` | `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_REVERB_HOST` |
+| `apps/api/public/web.config` | Acción `LocalhostRedirect` |
+| `emitir-cert-letsencrypt.ps1` | Variable `$dominio` |
+| `C:\Windows\System32\drivers\etc\hosts` | Entrada `127.0.0.1 comecyt-sistemas.edomex.gob.mx` |
+
+Después de editar `.env.local` se requirió **rebuild completo de Next.js** (las variables `NEXT_PUBLIC_*` se hornean en build-time):
+
+```powershell
+Stop-Service comecyt-web
+Set-Location C:\comecyt\apps\web
+& 'C:\Program Files\nodejs\npm.cmd' run build
+Copy-Item .next\static  .next\standalone\.next\static  -Recurse -Force
+Copy-Item public        .next\standalone\public        -Recurse -Force
+Start-Service comecyt-web
+```
+
+### IIS — actualización de bindings
+
+```powershell
+Import-Module WebAdministration
+
+# Eliminar bindings del dominio anterior
+Remove-WebBinding -Name "comecyt" -Protocol "http"  -Port 80  -HostHeader "apoyoempresarial-comecyt.gob.mx"
+Remove-WebBinding -Name "comecyt" -Protocol "https" -Port 443 -HostHeader "apoyoempresarial-comecyt.gob.mx"
+
+# Agregar bindings del dominio nuevo
+New-WebBinding -Name "comecyt" -Protocol "http"  -Port 80  -HostHeader "comecyt-sistemas.edomex.gob.mx" -SslFlags 0
+New-WebBinding -Name "comecyt" -Protocol "https" -Port 443 -HostHeader "comecyt-sistemas.edomex.gob.mx" -SslFlags 1
+```
+
+Bindings resultantes del sitio `comecyt`:
+
+```
+http/*:80:comecyt-sistemas.edomex.gob.mx
+https/*:443:comecyt-sistemas.edomex.gob.mx
+http/*:80:localhost
+https/*:443:localhost
+```
+
+### Certificado TLS temporal (autofirmado confiable)
+
+El cert anterior era para `apoyoempresarial-comecyt.gob.mx` → nombre no coincidía → navegador marcaba rojo. Se generó un nuevo cert autofirmado y se instaló como CA raíz de confianza:
+
+```powershell
+# 1. Generar cert autofirmado para nuevo dominio + localhost (válido 2 años)
+$cert = New-SelfSignedCertificate `
+  -DnsName "comecyt-sistemas.edomex.gob.mx","localhost" `
+  -CertStoreLocation "cert:\LocalMachine\MY" `
+  -NotAfter (Get-Date).AddYears(2) `
+  -FriendlyName "COMECYT sistemas edomex (temporal hasta Let's Encrypt)"
+
+# 2. Registrar en http.sys para ambos hostnames
+$hash = $cert.Thumbprint.ToLower()
+$appid = '{4dc3e181-e14b-4a21-b022-59fc669b0914}'
+netsh http add sslcert hostnameport=comecyt-sistemas.edomex.gob.mx:443 certhash=$hash appid=$appid certstorename=MY
+netsh http add sslcert hostnameport=localhost:443                       certhash=$hash appid=$appid certstorename=MY
+
+# 3. Instalar como CA raíz confiable (para que Edge/Chrome no muestren warning)
+$store = New-Object System.Security.Cryptography.X509Certificates.X509Store("Root","LocalMachine")
+$store.Open("ReadWrite"); $store.Add($cert); $store.Close()
+```
+
+**Hash del cert activo:** `2e676a4963e3f4b5836852df17c1c7eb88a684ad`
+
+**Comportamiento después del cambio:**
+
+| URL | Resultado |
+|---|---|
+| `http://comecyt-sistemas.edomex.gob.mx` | 301 → HTTPS |
+| `https://comecyt-sistemas.edomex.gob.mx/login` | 200 — candado sin warning (cert confiable en el servidor) |
+| `http://localhost` | 302 → `https://comecyt-sistemas.edomex.gob.mx/login` |
+| `https://localhost` | 200 — mismo cert (SAN incluye `localhost`) |
+
+> **Nota:** La confianza del cert autofirmado aplica **solo al navegador de este servidor** (cert en Trusted Root CA de Windows). Usuarios externos ven warning hasta que Let's Encrypt emita el cert real (§12).
+
+### Restaurar bindings y cert si se pierden
+
+```powershell
+Import-Module WebAdministration
+$hash  = "2e676a4963e3f4b5836852df17c1c7eb88a684ad"
+$appid = '{4dc3e181-e14b-4a21-b022-59fc669b0914}'
+
+# Bindings IIS
+New-WebBinding -Name "comecyt" -Protocol "http"  -Port 80  -HostHeader "comecyt-sistemas.edomex.gob.mx" -SslFlags 0 -ErrorAction SilentlyContinue
+New-WebBinding -Name "comecyt" -Protocol "https" -Port 443 -HostHeader "comecyt-sistemas.edomex.gob.mx" -SslFlags 1 -ErrorAction SilentlyContinue
+New-WebBinding -Name "comecyt" -Protocol "http"  -Port 80  -HostHeader "localhost" -SslFlags 0 -ErrorAction SilentlyContinue
+New-WebBinding -Name "comecyt" -Protocol "https" -Port 443 -HostHeader "localhost" -SslFlags 1 -ErrorAction SilentlyContinue
+
+# Certs http.sys
+netsh http add sslcert hostnameport=comecyt-sistemas.edomex.gob.mx:443 certhash=$hash appid=$appid certstorename=MY
+netsh http add sslcert hostnameport=localhost:443                       certhash=$hash appid=$appid certstorename=MY
+iisreset /noforce
 ```
 
 ---
