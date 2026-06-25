@@ -1,4 +1,4 @@
-﻿# 📋 Próximos pasos para tener el sistema 100% en producción
+# 📋 Próximos pasos para tener el sistema 100% en producción
 
 > **Audiencia:** Líder TIC del COMECYT que va a operar el deploy.
 > **Estado al 2026-06-25:** El sistema **YA ESTÁ DESPLEGADO** en producción (Windows Server 2022, stack nativo IIS+PHP+NSSM+PostgreSQL). Ver `docs/WINDOWS_DEPLOYMENT.md` para el detalle completo. Lo que queda son tareas externas (DNS, TLS, SMTP).
@@ -25,14 +25,14 @@
 
 ### P-1 — DNS: apuntar dominio al servidor
 
-**Dominio:** `apoyoempresarial-comecyt.gob.mx`
+**Dominio:** `comecyt-sistemas.edomex.gob.mx`
 
 1. Obtener la IP pública del servidor de Infra/OpenStack
 2. Crear registro `A` en el DNS institucional apuntando a esa IP
 3. Abrir puertos 80 y 443 en el security group de OpenStack
-4. Verificar resolución: `Resolve-DnsName apoyoempresarial-comecyt.gob.mx`
+4. Verificar resolución: `Resolve-DnsName comecyt-sistemas.edomex.gob.mx`
 
-> Mientras tanto el sistema es accesible localmente vía la entrada en `hosts` (`127.0.0.1 apoyoempresarial-comecyt.gob.mx`).
+> Mientras tanto el sistema es accesible localmente vía la entrada en `hosts` (`127.0.0.1 comecyt-sistemas.edomex.gob.mx`).
 
 ---
 
@@ -41,7 +41,7 @@
 **Solo hacer DESPUÉS de que el DNS resuelva correctamente.**
 
 1. Quitar la línea temporal del `hosts`:
-   `C:\Windows\System32\drivers\etc\hosts` → borrar `127.0.0.1 apoyoempresarial-comecyt.gob.mx`
+   `C:\Windows\System32\drivers\etc\hosts` → borrar `127.0.0.1 comecyt-sistemas.edomex.gob.mx`
 2. Ejecutar el helper:
    ```powershell
    & C:\comecyt\emitir-cert-letsencrypt.ps1

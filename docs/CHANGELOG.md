@@ -1,4 +1,4 @@
-﻿# 📜 Changelog — COMECYT
+# 📜 Changelog — COMECYT
 
 Todos los cambios significativos del sistema se documentan aquí.
 
@@ -12,7 +12,7 @@ Versionado según [Semantic Versioning](https://semver.org/lang/es/).
 ### IIS — acceso local via `localhost`
 - Bindings `http/*:80:localhost` y `https/*:443:localhost` agregados al sitio `comecyt`
 - Cert SSL del dominio asignado a `localhost:443` via `netsh http add sslcert`
-- Regla `LocalhostRedirect` en `web.config`: `http://localhost` → `https://apoyoempresarial-comecyt.gob.mx`
+- Regla `LocalhostRedirect` en `web.config`: `http://localhost` → `https://comecyt-sistemas.edomex.gob.mx`
 - Escribir `localhost` en el navegador del servidor abre el sistema (advertencia de cert — normal hasta Let's Encrypt)
 
 ### Documentación de cierre
@@ -70,7 +70,7 @@ Versionado según [Semantic Versioning](https://semver.org/lang/es/).
 - `config:cache` rompía health check → `env()` retorna vacío cuando config está cacheada; solución: no cachear
 
 ### Pendientes a la fecha 2026-06-25
-- DNS `apoyoempresarial-comecyt.gob.mx` → IP pública (en manos de Infra)
+- DNS `comecyt-sistemas.edomex.gob.mx` → IP pública (en manos de Infra)
 - Certificado TLS Let's Encrypt (post-DNS)
 - SMTP para notificaciones
 - Imágenes del carrusel de login (vía panel admin)
