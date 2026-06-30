@@ -721,4 +721,124 @@ iisreset /noforce
 
 ---
 
+## §22 — Acceso por IP durante pruebas internas (2026-06-30)
+
+**Contexto:** Mientras el DNS institucional no apunta `comecyt-sistemas.edomex.gob.mx` a la IP del servidor, el equipo accede directamente por `http://10.250.36.241`. Se aplicaron dos correcciones para que el sistema funcione completamente por IP.
+
+---
+
+### 22.1 — Archivos estáticos de Next.js en modo standalone
+
+**Síntoma:** Diseño no cargaba — CSS, JS e imágenes rotos en todos los equipos clientes.
+
+**Causa:** Next.js con `output: "standalone"` NO copia automáticamente los assets estáticos al directorio standalone al hacer `npm run build`. El server Node sirve el HTML correctamente, pero `/_next/static/*` y `public/*` devolvían 404.
+
+**Fix aplicado (2026-06-30):**
+
+```powershell
+$web = "F:\Desarrollo Tecnologico\apps\web"
+Copy-Item "$web\.next\static"   "$web\.next\standalone\.next\static" -Recurse -Force
+Copy-Item "$web\public\*"       "$web\.next\standalone\public\"       -Recurse -Force
+Restart-Service comecyt-web
+```
+
+> ⚠️ **Este paso debe repetirse SIEMPRE después de `npm run build`** — actualizaciones de código, cambios de `.env.local`, cualquier rebuild.
+
+---
+
+### 22.2 — API: habilitar acceso por IP (configuración temporal)
+
+**Síntoma:** El login fallaba con errores CORS y las cookies de sesión no se enviaban al acceder por `http://10.250.36.241`.
+
+**Causa:** La API tenía `CORS_ALLOWED_ORIGINS`, `COOKIE_DOMAIN` y `COOKIE_SECURE` configurados exclusivamente para el dominio HTTPS.
+
+**Cambios en `F:\Desarrollo Tecnologico\apps\api\.env` (2026-06-30):**
+
+| Variable | Valor con dominio (producción final) | Valor actual (IP / pruebas) |
+|---|---|---|
+| `CORS_ALLOWED_ORIGINS` | `https://comecyt-sistemas.edomex.gob.mx` | `https://comecyt-sistemas.edomex.gob.mx,http://10.250.36.241` |
+| `COOKIE_DOMAIN` | `.comecyt-sistemas.edomex.gob.mx` | `null` |
+| `COOKIE_SECURE` | `true` | `false` |
+| `COOKIE_SAME_SITE` | `Strict` | `Lax` |
+
+Después de editar el `.env`:
+
+```powershell
+cd "F:\Desarrollo Tecnologico\apps\api"
+C:\php\php.exe artisan config:clear
+C:\php\php.exe artisan cache:clear
+Restart-Service comecyt-queue, comecyt-scheduler
+```
+
+**URL activa para pruebas internas:** `http://10.250.36.241/login`
+
+> ⚠️ Esta configuración relaja la postura de seguridad (cookies HTTP, CORS abierto a IP). Revertir obligatoriamente cuando el DNS esté activo (§22.3).
+
+---
+
+### 22.3 — Transición al dominio cuando DNS esté activo
+
+Cuando Infra cree el registro A (`comecyt-sistemas.edomex.gob.mx → IP pública del servidor`):
+
+**Paso 1 — Restaurar seguridad en `apps/api/.env`:**
+
+```env
+CORS_ALLOWED_ORIGINS=https://comecyt-sistemas.edomex.gob.mx
+COOKIE_DOMAIN=.comecyt-sistemas.edomex.gob.mx
+COOKIE_SECURE=true
+COOKIE_SAME_SITE=Strict
+```
+
+**Paso 2 — Actualizar `apps/web/.env.local` al dominio:**
+
+```env
+NEXT_PUBLIC_API_URL=https://comecyt-sistemas.edomex.gob.mx/api
+NEXT_PUBLIC_REVERB_HOST=comecyt-sistemas.edomex.gob.mx
+NEXT_PUBLIC_REVERB_PORT=443
+NEXT_PUBLIC_REVERB_SCHEME=https
+```
+
+**Paso 3 — Reconstruir Next.js** (obligatorio — las vars `NEXT_PUBLIC_*` se bakean en el build):
+
+```powershell
+cd "F:\Desarrollo Tecnologico\apps\web"
+& "C:\Program Files\nodejs\npm.cmd" run build
+
+# Copiar estáticos (SIEMPRE después de build — ver §22.1)
+$web = "F:\Desarrollo Tecnologico\apps\web"
+Copy-Item "$web\.next\static" "$web\.next\standalone\.next\static" -Recurse -Force
+Copy-Item "$web\public\*"     "$web\.next\standalone\public\"       -Recurse -Force
+```
+
+**Paso 4 — Limpiar caché y reiniciar servicios:**
+
+```powershell
+cd "F:\Desarrollo Tecnologico\apps\api"
+C:\php\php.exe artisan config:clear
+C:\php\php.exe artisan cache:clear
+Restart-Service comecyt-web, comecyt-queue, comecyt-scheduler
+```
+
+**Paso 5 — Quitar la entrada temporal del `hosts` del servidor:**
+
+```
+C:\Windows\System32\drivers\etc\hosts  →  borrar línea:  127.0.0.1  comecyt-sistemas.edomex.gob.mx
+```
+
+**Paso 6 — Emitir certificado Let's Encrypt:**
+
+```powershell
+& "F:\Desarrollo Tecnologico\emitir-cert-letsencrypt.ps1"
+```
+
+El script verifica que el DNS ya no resuelva a `127.0.0.1`, pide el email ACME y configura win-acme con renovación automática (~60 días).
+
+**Paso 7 — Verificar:**
+
+```
+https://comecyt-sistemas.edomex.gob.mx/login  →  candado verde (Let's Encrypt, confiable universalmente)
+```
+
+---
+
 _Documento generado durante el despliegue inicial en Windows. Mantener actualizado ante cambios de infraestructura._

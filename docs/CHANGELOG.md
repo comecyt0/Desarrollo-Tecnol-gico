@@ -7,6 +7,24 @@ Versionado según [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [8.2.3] — 2026-06-30 (acceso por IP para pruebas internas)
+
+### Next.js standalone — archivos estáticos
+- Copiados `.next/static/` y `public/` a `.next/standalone/` — sin este paso el CSS/JS/imágenes devuelven 404 después de cualquier `npm run build`
+- Documentado en §22.1: este copy debe repetirse en cada rebuild
+
+### API — configuración temporal para acceso por IP
+- `CORS_ALLOWED_ORIGINS` ampliado con `http://10.250.36.241` para permitir peticiones desde equipos de la red interna
+- `COOKIE_DOMAIN=null` y `COOKIE_SECURE=false` para que las cookies de sesión funcionen en HTTP
+- `COOKIE_SAME_SITE=Lax` (era `Strict`)
+- Documentado en §22.2 con tabla de valores a restaurar cuando el DNS esté activo
+
+### Documentación
+- `WINDOWS_DEPLOYMENT.md` §22 — proceso completo: corrección standalone, configuración por IP, y checklist de transición al dominio (§22.3)
+- `NEXT_STEPS.md` — P-1 actualizado con instrucciones de transición al dominio
+
+---
+
 ## [8.2.2] — 2026-06-25 (cambio de dominio + cert autofirmado confiable)
 
 ### Dominio
