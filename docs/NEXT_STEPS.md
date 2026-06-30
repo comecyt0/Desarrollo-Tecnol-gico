@@ -1,7 +1,7 @@
 # 📋 Próximos pasos para tener el sistema 100% en producción
 
 > **Audiencia:** Líder TIC del COMECYT que va a operar el deploy.
-> **Estado al 2026-06-25:** El sistema **YA ESTÁ DESPLEGADO** en producción (Windows Server 2022, stack nativo IIS+PHP+NSSM+PostgreSQL). Ver `docs/WINDOWS_DEPLOYMENT.md` para el detalle completo. Lo que queda son tareas externas (DNS, TLS, SMTP).
+> **Estado al 2026-06-30:** El sistema **YA ESTÁ DESPLEGADO y accesible por IP** (`http://10.250.36.241/login`). Mientras el DNS no resuelva, la configuración es temporal (CORS + cookies relajados para HTTP). Ver `docs/WINDOWS_DEPLOYMENT.md` §22 para el proceso de transición al dominio.
 
 ---
 
@@ -20,6 +20,7 @@
 | ✅ Documentación Windows | `docs/WINDOWS_DEPLOYMENT.md` §1–§21 en `main` |
 | ✅ Dominio definitivo configurado | `comecyt-sistemas.edomex.gob.mx` en todos los archivos de config y docs |
 | ✅ Cert autofirmado confiable localmente | `New-SelfSignedCertificate` → Trusted Root CA → candado sin warning en el servidor |
+| ✅ Acceso por IP habilitado para pruebas internas | `http://10.250.36.241/login` — CSS/JS corregido (standalone copy), CORS + cookies ajustados; ver §22 para revertir al dominio |
 
 ---
 
@@ -34,7 +35,19 @@
 3. Abrir puertos 80 y 443 en el security group de OpenStack
 4. Verificar resolución: `Resolve-DnsName comecyt-sistemas.edomex.gob.mx`
 
-> Mientras tanto el sistema es accesible localmente vía la entrada en `hosts` (`127.0.0.1 comecyt-sistemas.edomex.gob.mx`).
+> **Mientras tanto** el sistema es accesible para pruebas internas vía `http://10.250.36.241/login` (configuración temporal, ver §22.2 de `WINDOWS_DEPLOYMENT.md`).
+
+**Una vez que el DNS resuelva, seguir el checklist de §22.3:**
+
+```
+☐ Restaurar CORS_ALLOWED_ORIGINS, COOKIE_DOMAIN, COOKIE_SECURE, COOKIE_SAME_SITE en apps/api/.env
+☐ Actualizar NEXT_PUBLIC_* en apps/web/.env.local al dominio HTTPS
+☐ npm run build  →  copiar .next/static y public/ a .next/standalone/
+☐ artisan config:clear && Restart-Service comecyt-web, comecyt-queue, comecyt-scheduler
+☐ Borrar línea del hosts: 127.0.0.1  comecyt-sistemas.edomex.gob.mx
+☐ Ejecutar emitir-cert-letsencrypt.ps1
+☐ Verificar https://comecyt-sistemas.edomex.gob.mx/login → candado verde
+```
 
 ---
 
