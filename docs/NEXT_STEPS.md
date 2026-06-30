@@ -16,7 +16,7 @@
 | ✅ 2FA TOTP en cuenta admin | Activo con `pragmarx/google2fa` |
 | ✅ Backups diarios PostgreSQL | Tarea programada SYSTEM, 02:00, retención 14 días |
 | ✅ Puertos 80/443 escuchando | Windows Firewall rule activa |
-| ✅ PATs de GitHub revocados | Token `ghp_…CNBu` revocado tras el push |
+| ✅ PATs de GitHub revocados | Tokens de sesiones 2026-06-25 (`ghp_…CNBu`) y 2026-06-30 (`ghp_…UdS7`) revocados |
 | ✅ Documentación Windows | `docs/WINDOWS_DEPLOYMENT.md` §1–§21 en `main` |
 | ✅ Dominio definitivo configurado | `comecyt-sistemas.edomex.gob.mx` en todos los archivos de config y docs |
 | ✅ Cert autofirmado confiable localmente | `New-SelfSignedCertificate` → Trusted Root CA → candado sin warning en el servidor |
